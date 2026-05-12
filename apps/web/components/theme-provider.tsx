@@ -13,6 +13,7 @@ function ThemeProvider({
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
+      themes={["light", "dark", "theme-nova", "theme-vega", "theme-maia"]}
       {...props}
     >
       <ThemeHotkey />
