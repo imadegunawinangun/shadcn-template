@@ -32,15 +32,45 @@ importers:
       '@clerk/nextjs':
         specifier: ^7.3.3
         version: 7.3.3(next@16.1.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@workspace/admin':
+        specifier: workspace:*
+        version: link:../../packages/admin
+      '@workspace/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
+      '@workspace/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@workspace/automation':
+        specifier: workspace:*
+        version: link:../../packages/automation
+      '@workspace/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
+      '@workspace/dashboard':
+        specifier: workspace:*
+        version: link:../../packages/dashboard
       '@workspace/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@workspace/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@workspace/payments':
         specifier: workspace:*
         version: link:../../packages/payments
+      '@workspace/security':
+        specifier: workspace:*
+        version: link:../../packages/security
+      '@workspace/settings':
+        specifier: workspace:*
+        version: link:../../packages/settings
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@workspace/users':
+        specifier: workspace:*
+        version: link:../../packages/users
       lucide-react:
         specifier: ^1.14.0
         version: 1.14.0(react@19.2.4)
@@ -56,6 +86,9 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.1.18
@@ -82,12 +115,195 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/admin:
+    dependencies:
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/assets:
+    dependencies:
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/auth:
+    dependencies:
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.75.0(react@19.2.4))
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-hook-form:
+        specifier: ^7.75.0
+        version: 7.75.0(react@19.2.4)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/automation:
+    dependencies:
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/billing:
+    dependencies:
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/cloudinary:
     dependencies:
       cloudinary:
         specifier: ^2.5.1
         version: 2.10.0
     devDependencies:
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/dashboard:
+    dependencies:
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      recharts:
+        specifier: 3.8.0
+        version: 3.8.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react-is@16.13.1)(react@19.2.4)(redux@5.0.1)
+      tailwind-merge:
+        specifier: ^3.6.0
+        version: 3.6.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.1.0
+        version: 25.2.3
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
       '@workspace/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -156,6 +372,31 @@ importers:
         specifier: ^8.54.0
         version: 8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
 
+  packages/notifications:
+    dependencies:
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/payments:
     dependencies:
       axios:
@@ -179,6 +420,68 @@ importers:
         version: link:../typescript-config
       typescript:
         specifier: 5.9.3
+        version: 5.9.3
+
+  packages/security:
+    dependencies:
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/settings:
+    dependencies:
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.75.0(react@19.2.4))
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-hook-form:
+        specifier: ^7.75.0
+        version: 7.75.0(react@19.2.4)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
         version: 5.9.3
 
   packages/typescript-config: {}
@@ -285,6 +588,43 @@ importers:
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/users:
+    dependencies:
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.75.0(react@19.2.4))
+      '@workspace/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.14.0
+        version: 1.14.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-hook-form:
+        specifier: ^7.75.0
+        version: 7.75.0(react@19.2.4)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

@@ -47,6 +47,8 @@ const fontMono = Geist_Mono({
 
 import { ClerkProvider } from "@clerk/nextjs"
 
+import { Toaster } from "sonner"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -94,10 +96,13 @@ export default function RootLayout({
           <ThemeProvider>
             <TooltipProvider delayDuration={0}>
               {children}
+              <Toaster position="top-right" expand={true} richColors />
             </TooltipProvider>
           </ThemeProvider>
         </body>
       </html>
+
     </ClerkProvider>
   )
 }
+
