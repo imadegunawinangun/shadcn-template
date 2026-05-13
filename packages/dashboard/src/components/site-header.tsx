@@ -12,7 +12,6 @@ import {
   BreadcrumbSeparator 
 } from "@workspace/ui/components/breadcrumb"
 import { ThemeSwitcher } from "@workspace/ui/components/theme-switcher"
-import { ThemeCustomizer } from "@workspace/ui/components/theme-customizer"
 
 interface SiteHeaderProps {
   breadcrumbs?: { title: string; href?: string }[]
@@ -49,7 +48,6 @@ export function SiteHeader({ breadcrumbs, actions }: SiteHeaderProps) {
       </div>
       <div className="flex items-center gap-2">
         <ThemeSwitcher />
-        <ThemeCustomizer />
         {actions && (
           <div className="ml-2 border-l pl-2">
             {actions}

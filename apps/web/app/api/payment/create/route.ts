@@ -5,7 +5,6 @@ import { db } from '@workspace/database';
 // @ts-ignore
 import { transaction } from '@workspace/database/schema';
 import { auth } from '@clerk/nextjs/server';
-import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +19,7 @@ export async function POST(req: Request) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    const orderId = `ORD-${uuidv4().substring(0, 8).toUpperCase()}`;
+    const orderId = `ORD-${crypto.randomUUID().substring(0, 8).toUpperCase()}`;
     
     const paymentProvider = PaymentFactory.create(provider as PaymentProviderType);
     

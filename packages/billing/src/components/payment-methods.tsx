@@ -12,22 +12,21 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { PaymentMethod } from "./pricing-table"
 import { toast } from "sonner"
+import { AddCardDialog } from "./add-card-dialog"
 
 interface PaymentMethodsProps {
   methods: PaymentMethod[]
   onDelete?: (id: string) => void
   onSetDefault?: (id: string) => void
+  onAdd?: (card: any) => void
 }
 
-export function PaymentMethods({ methods, onDelete, onSetDefault }: PaymentMethodsProps) {
+export function PaymentMethods({ methods, onDelete, onSetDefault, onAdd }: PaymentMethodsProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium">Saved Cards</h4>
-        <Button size="sm" variant="outline" className="h-8 gap-2" onClick={() => toast.info("Add card functionality coming soon")}>
-          <Plus className="h-3.5 w-3.5" />
-          Add Card
-        </Button>
+        <AddCardDialog onAdd={onAdd} />
       </div>
 
       <div className="grid gap-4">

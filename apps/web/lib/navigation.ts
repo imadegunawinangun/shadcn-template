@@ -27,7 +27,7 @@ export const navSections = [
     items: [
       { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
       { title: "Settings", href: "/dashboard/settings", icon: Settings },
-      { title: "Notifications", href: "/dashboard/notifications", icon: Bell, label: "3" },
+      { title: "Notifications", href: "/dashboard/notifications", icon: Bell, label: "1" },
       { title: "Automation", href: "/dashboard/automation", icon: Zap },
     ],
   },

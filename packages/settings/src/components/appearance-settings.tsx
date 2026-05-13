@@ -3,7 +3,8 @@
 import { useTheme } from "next-themes"
 import { Button } from "@workspace/ui/components/button"
 import { TypographyH3, TypographyP } from "@workspace/ui/components/typography"
-import { Moon, Sun, Laptop } from "lucide-react"
+import { Moon, Sun, Laptop, Palette } from "lucide-react"
+import { ThemeCustomizer } from "@workspace/ui/components/theme-customizer"
 
 export function AppearanceSettings() {
   const { theme, setTheme } = useTheme()
@@ -42,6 +43,16 @@ export function AppearanceSettings() {
           <Laptop className="h-6 w-6" />
           <span>System</span>
         </Button>
+      </div>
+
+      <div className="pt-6 border-t">
+        <div className="mb-4">
+          <TypographyH3 className="text-lg">Advanced Configuration</TypographyH3>
+          <TypographyP className="text-sm text-muted-foreground">
+            Fine-tune your brand colors, typography, and UI component styles.
+          </TypographyP>
+        </div>
+        <ThemeCustomizer />
       </div>
     </div>
   )

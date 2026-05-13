@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, pgEnum, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, pgEnum, primaryKey, jsonb } from "drizzle-orm/pg-core";
 
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "success", "failed", "expired"]);
 export const paymentProviderEnum = pgEnum("payment_provider", ["stripe", "midtrans", "xendit", "doku"]);
@@ -64,5 +64,59 @@ export const transaction = pgTable("transaction", {
 	checkoutUrl: text("checkoutUrl"),
 	createdAt: timestamp("createdAt").notNull().defaultNow(),
 	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const apiKey = pgTable("apiKey", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	name: text("name").notNull(),
+	key: text("key").notNull().unique(),
+	status: text("status").notNull().default("active"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	lastUsedAt: timestamp("lastUsedAt"),
+});
+
+export const webhook = pgTable("webhook", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	name: text("name"),
+	url: text("url").notNull(),
+	type: text("type").notNull().default("outgoing"), // incoming, outgoing
+	events: text("events").notNull(), 
+	status: text("status").notNull().default("active"),
+	secret: text("secret").notNull(),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export const workflow = pgTable("workflow", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	name: text("name").notNull(),
+	triggerId: text("triggerId").notNull(),
+	actions: jsonb("actions").notNull(), // Menyimpan array of actions [{id: 'send_email', label: '...'}, ...]
+	flow: jsonb("flow"), // Menyimpan state visual editor (nodes, edges)
+	status: text("status").notNull().default("active"),
+	runs: integer("runs").notNull().default(0),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const workflowLog = pgTable("workflowLog", {
+	id: text("id").primaryKey(),
+	workflowId: text("workflowId").references(() => workflow.id).notNull(),
+	status: text("status").notNull(), // success, failed
+	triggerData: jsonb("triggerData"),
+	stepLogs: jsonb("stepLogs"), // Array of { actionId: string, status: string, input: any, output: any, error?: string }
+	error: text("error"),
+	executedAt: timestamp("executedAt").notNull().defaultNow(),
+});
+
+export const webhookDelivery = pgTable("webhookDelivery", {
+	id: text("id").primaryKey(),
+	webhookId: text("webhookId").references(() => webhook.id).notNull(),
+	status: integer("status").notNull(), // 200, 500, etc.
+	payload: jsonb("payload"),
+	error: text("error"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 

@@ -12,12 +12,14 @@ import {
 } from "@workspace/billing"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Button } from "@workspace/ui/components/button"
 import { navSections, currentUser } from "@/lib/navigation"
 import { mockPlans, mockInvoices, mockPaymentMethods } from "@/lib/mock-data"
 import { toast } from "sonner"
+import { PaymentSelector } from "@/components/payment-selector"
 
 
 import { Sparkles, CreditCard, Receipt, Target, AlertTriangle, ShieldCheck, Download } from "lucide-react"
@@ -28,6 +30,8 @@ export default function BillingPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(mockPaymentMethods)
   const [invoices] = useState(mockInvoices)
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<PricingPlan | null>(null)
 
   const handleSelectPlan = (selectedPlan: PricingPlan) => {
     if (selectedPlan.price === "Custom") {
@@ -37,16 +41,18 @@ export default function BillingPage() {
       return
     }
 
-    setPlans(prev => prev.map(plan => ({
-      ...plan,
-      current: plan.name === selectedPlan.name,
-      buttonText: plan.name === selectedPlan.name ? "Current Plan" : 
-                  plan.name === "Free" ? "Downgrade" : "Upgrade"
-    })))
-    
-    toast.success(`Switched to ${selectedPlan.name} plan (${billingCycle})`, {
-      description: "Your new limits will take effect immediately."
-    })
+    if (selectedPlan.name === "Free") {
+      setPlans(prev => prev.map(plan => ({
+        ...plan,
+        current: plan.name === "Free",
+        buttonText: plan.name === "Free" ? "Current Plan" : "Upgrade"
+      })))
+      toast.success("Switched to Free plan")
+      return
+    }
+
+    setSelectedPlanForPayment(selectedPlan)
+    setIsPaymentModalOpen(true)
   }
 
   const handleDeletePaymentMethod = (id: string) => {
@@ -60,6 +66,10 @@ export default function BillingPage() {
       isDefault: m.id === id
     })))
     toast.success("Default payment method updated")
+  }
+
+  const handleAddPaymentMethod = (newCard: PaymentMethod) => {
+    setPaymentMethods(prev => [...prev, newCard])
   }
 
   return (
@@ -97,6 +107,7 @@ export default function BillingPage() {
                   methods={paymentMethods} 
                   onDelete={handleDeletePaymentMethod}
                   onSetDefault={handleSetDefaultPaymentMethod}
+                  onAdd={handleAddPaymentMethod}
                 />
                 
                 <Card>
@@ -163,6 +174,30 @@ export default function BillingPage() {
           </div>
         </div>
       </DashboardShell>
+
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>Complete Your Purchase</DialogTitle>
+            <DialogDescription>
+              You are upgrading to the <strong>{selectedPlanForPayment?.name}</strong> plan.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPlanForPayment && (
+            <PaymentSelector 
+              amount={selectedPlanForPayment.price === "$19" ? (billingCycle === "yearly" ? 1824000 : 300000) : 0} 
+              items={[
+                {
+                  id: selectedPlanForPayment.name.toLowerCase(),
+                  name: `${selectedPlanForPayment.name} Plan (${billingCycle})`,
+                  price: selectedPlanForPayment.price === "$19" ? (billingCycle === "yearly" ? 1824000 : 300000) : 0,
+                  quantity: 1
+                }
+              ]}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   )
 }

@@ -5,33 +5,43 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@workspace/ui/components/button';
 import { RadioGroup, RadioGroupItem } from '@workspace/ui/components/radio-group';
 import { Label } from '@workspace/ui/components/label';
-import { Loader2, CreditCard, Wallet, Banknote } from 'lucide-react';
+import { Badge } from '@workspace/ui/components/badge';
+import { Loader2, CreditCard, Wallet, Banknote, ShieldCheck, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@workspace/ui/lib/utils';
 
 const providers = [
   {
     id: 'stripe',
     name: 'Stripe',
-    description: 'International payments via Credit Card',
+    description: 'International Credit/Debit Card',
     icon: CreditCard,
+    tag: 'Global',
+    tagColor: 'bg-blue-500/10 text-blue-600',
   },
   {
     id: 'midtrans',
     name: 'Midtrans',
-    description: 'Local Indonesian payments (QRIS, VA, GoPay)',
+    description: 'QRIS, VA, GoPay, ShopeePay',
     icon: Wallet,
+    tag: 'Popular',
+    tagColor: 'bg-orange-500/10 text-orange-600',
   },
   {
     id: 'xendit',
     name: 'Xendit',
-    description: 'Fast local transfers and e-wallets',
-    icon: Banknote,
+    description: 'Bank Transfer & E-Wallets',
+    icon: Zap,
+    tag: 'Fast',
+    tagColor: 'bg-green-500/10 text-green-600',
   },
   {
     id: 'doku',
     name: 'DOKU',
-    description: 'Popular Indonesian payment gateway',
-    icon: Wallet,
+    description: 'VA & Convenience Stores',
+    icon: Banknote,
+    tag: 'Local',
+    tagColor: 'bg-purple-500/10 text-purple-600',
   },
 ];
 
@@ -41,7 +51,7 @@ interface PaymentSelectorProps {
 }
 
 export function PaymentSelector({ amount, items }: PaymentSelectorProps) {
-  const [provider, setProvider] = useState('stripe');
+  const [provider, setProvider] = useState('midtrans');
   const [loading, setLoading] = useState(false);
 
   const handlePayment = async () => {
@@ -54,68 +64,99 @@ export function PaymentSelector({ amount, items }: PaymentSelectorProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create payment');
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create payment');
       }
 
       const data = await response.json();
 
       if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else if (data.token) {
-        // Handle Midtrans Snap token if needed
-        // For simplicity, we assume redirect_url is provided
-        window.location.href = data.checkoutUrl;
+        toast.success('Redirecting to payment gateway...');
+        setTimeout(() => {
+          window.location.href = data.checkoutUrl;
+        }, 1000);
+      } else {
+        throw new Error('No checkout URL received');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Something went wrong');
+      toast.error(error.message || 'Something went wrong', {
+        description: 'Please check your environment variables or try again later.'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Choose Payment Method</CardTitle>
-        <CardDescription>Select your preferred payment provider to continue.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <RadioGroup value={provider} onValueChange={setProvider} className="grid gap-4">
-          {providers.map((p) => (
-            <div key={p.id}>
-              <RadioGroupItem value={p.id} id={p.id} className="peer sr-only" />
-              <Label
-                htmlFor={p.id}
-                className="flex items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-              >
-                <div className="flex items-center gap-4">
-                  <p.icon className="h-6 w-6" />
-                  <div>
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-sm text-muted-foreground">{p.description}</p>
-                  </div>
+    <div className="space-y-4">
+      <RadioGroup value={provider} onValueChange={setProvider} className="grid gap-3">
+        {providers.map((p) => (
+          <div key={p.id}>
+            <RadioGroupItem value={p.id} id={p.id} className="peer sr-only" />
+            <Label
+              htmlFor={p.id}
+              className={cn(
+                "flex items-center justify-between rounded-xl border-2 border-muted bg-card p-4 transition-all cursor-pointer",
+                "hover:bg-accent/50 hover:border-accent-foreground/20",
+                "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 [&:has([data-state=checked])]:border-primary"
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-full",
+                  provider === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                )}>
+                  <p.icon className="h-5 w-5" />
                 </div>
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </CardContent>
-      <CardFooter className="flex flex-col gap-4">
-        <div className="flex justify-between w-full text-lg font-bold">
-          <span>Total</span>
-          <span>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount)}</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">{p.name}</p>
+                    <Badge variant="outline" className={cn("text-[10px] h-4 px-1 border-none", p.tagColor)}>
+                      {p.tag}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{p.description}</p>
+                </div>
+              </div>
+              <div className={cn(
+                "h-2 w-2 rounded-full transition-all",
+                provider === p.id ? "bg-primary scale-150" : "bg-transparent"
+              )} />
+            </Label>
+          </div>
+        ))}
+      </RadioGroup>
+
+      <div className="pt-4 border-t space-y-4">
+        <div className="flex justify-between items-center px-1">
+          <span className="text-sm text-muted-foreground font-medium">Total Amount</span>
+          <span className="text-xl font-bold text-primary">
+            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount)}
+          </span>
         </div>
-        <Button className="w-full" size="lg" onClick={handlePayment} disabled={loading}>
+        
+        <Button 
+          className="w-full h-12 text-md font-semibold shadow-lg shadow-primary/20" 
+          onClick={handlePayment} 
+          disabled={loading || amount === 0}
+        >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Processing...
             </>
           ) : (
-            'Pay Now'
+            <>
+              <ShieldCheck className="mr-2 h-5 w-5" />
+              Secure Checkout
+            </>
           )}
         </Button>
-      </CardFooter>
-    </Card>
+        
+        <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1">
+          <ShieldCheck className="h-3 w-3" /> Encrypted & Secure Payments
+        </p>
+      </div>
+    </div>
   );
 }

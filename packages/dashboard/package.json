@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@workspace/ui": "workspace:*",
+    "@clerk/nextjs": "^7.3.3",
     "lucide-react": "^1.14.0",
     "react": "^19.2.4",
     "recharts": "3.8.0",

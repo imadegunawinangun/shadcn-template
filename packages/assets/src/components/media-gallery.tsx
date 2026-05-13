@@ -69,8 +69,9 @@ export interface Asset {
 interface MediaGalleryProps {
   assets: Asset[]
   onAction?: (asset: Asset, action: string) => void
+  onUpload?: (base64: string, name: string) => Promise<Asset>
 }
-export function MediaGallery({ assets: initialAssets, onAction }: MediaGalleryProps) {
+export function MediaGallery({ assets: initialAssets, onAction, onUpload }: MediaGalleryProps) {
   const [assets, setAssets] = useState<Asset[]>(initialAssets)
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -115,26 +116,44 @@ export function MediaGallery({ assets: initialAssets, onAction }: MediaGalleryPr
     setIsUploading(true)
     
     const reader = new FileReader()
-    reader.onload = (e) => {
-      const url = e.target?.result as string
-      const type = file.type.startsWith('image/') ? 'image' : 
-                   file.type.startsWith('video/') ? 'video' : 'document'
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string
       
-      const newAsset: Asset = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        type: type as Asset['type'],
-        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-        url: url,
-        createdAt: new Date().toISOString()
+      try {
+        let newAsset: Asset;
+        
+        if (onUpload) {
+          // Use external upload (Cloudinary)
+          newAsset = await onUpload(base64, file.name)
+        } else {
+          // Use mock local upload
+          const type = file.type.startsWith('image/') ? 'image' : 
+                       file.type.startsWith('video/') ? 'video' : 'document'
+          
+          newAsset = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: file.name,
+            type: type as Asset['type'],
+            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+            url: base64,
+            createdAt: new Date().toISOString()
+          }
+        }
+        
+        setAssets(prev => [newAsset, ...prev])
+        toast.success("Upload successful", {
+          description: `${file.name} has been added to your media library.`
+        })
+      } catch (error) {
+        console.error("Upload error:", error)
+        toast.error("Upload failed", {
+          description: "There was an error uploading your file."
+        })
+      } finally {
+        setIsUploading(false)
+        setIsUploadOpen(false)
+        if (fileInputRef.current) fileInputRef.current.value = ""
       }
-      
-      setAssets(prev => [newAsset, ...prev])
-      setIsUploading(false)
-      setIsUploadOpen(false)
-      toast.success("Upload successful", {
-        description: `${file.name} has been added to your media library.`
-      })
     }
     reader.readAsDataURL(file)
   }
@@ -194,7 +213,7 @@ export function MediaGallery({ assets: initialAssets, onAction }: MediaGalleryPr
           <Input 
             leftIcon={<Search className="h-4 w-4 text-muted-foreground" />}
             placeholder="Search assets..." 
-            className="bg-background border-none shadow-none focus-visible:ring-0 max-w-sm h-9" 
+            className="bg-background border-none shadow-none focus-visible:ring-0 w-full h-9" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -529,7 +548,7 @@ export function MediaGallery({ assets: initialAssets, onAction }: MediaGalleryPr
       )}
       {/* Preview Dialog */}
       <Dialog open={!!previewAsset} onOpenChange={(open) => !open && setPreviewAsset(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-none">
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-none" showCloseButton={false}>
           {previewAsset && (
             <div className="flex flex-col h-[80vh]">
               <div className="flex items-center justify-between p-4 bg-background/10 backdrop-blur-md">

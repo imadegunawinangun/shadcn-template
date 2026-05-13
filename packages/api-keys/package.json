@@ -1,0 +1,23 @@
+{
+  "name": "@workspace/api-keys",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@workspace/database": "workspace:*",
+    "@workspace/ui": "workspace:*",
+    "lucide-react": "^0.454.0",
+    "next": "15.1.6",
+    "react": "^19.0.0",
+    "sonner": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.3"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./actions": "./src/actions.ts"
+  }
+}

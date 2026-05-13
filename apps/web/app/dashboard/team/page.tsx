@@ -40,7 +40,7 @@ export default function TeamPage() {
         />
         
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden">
             <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="settings">Workspace Settings</TabsTrigger>
           </TabsList>

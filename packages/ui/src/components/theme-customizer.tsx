@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, Settings2, RotateCcw, Unlock, Palette, Pipette, Type } from "lucide-react"
+import { Check, Settings2, RotateCcw, Unlock, Lock, Palette, Pipette, Type } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@workspace/ui/components/button"
@@ -101,6 +101,7 @@ export function ThemeCustomizer() {
     menuAppearance: "Solid",
     menuAccent: "Subtle",
   })
+  const [locked, setLocked] = React.useState<Record<string, boolean>>({})
 
   // Load from localStorage on mount
   React.useEffect(() => {
@@ -183,16 +184,37 @@ export function ThemeCustomizer() {
     }
   }
 
+  const toggleLock = (section: string) => {
+    setLocked(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  const shuffle = () => {
+    const newConfig = { ...config }
+    
+    if (!locked["Style"]) newConfig.style = STYLES[Math.floor(Math.random() * STYLES.length)]!
+    if (!locked["Base Color"]) newConfig.baseColor = BASE_COLORS[Math.floor(Math.random() * BASE_COLORS.length)]!.name
+    if (!locked["Color"]) newConfig.color = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]!.name
+    if (!locked["Chart Color"]) newConfig.chartColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]!.name
+    if (!locked["Heading Font"]) newConfig.fontHeading = HEADING_FONTS[Math.floor(Math.random() * HEADING_FONTS.length)]!
+    if (!locked["Body Font"]) newConfig.fontBody = BODY_FONTS[Math.floor(Math.random() * BODY_FONTS.length)]!
+    if (!locked["Radius"]) newConfig.radius = RADIUS_OPTIONS[Math.floor(Math.random() * RADIUS_OPTIONS.length)]!.value
+    if (!locked["Menu"]) newConfig.menu = (["Default", "Inverted"][Math.floor(Math.random() * 2)])!
+    if (!locked["Menu Appearance"]) newConfig.menuAppearance = (["Solid", "Translucent"][Math.floor(Math.random() * 2)])!
+    if (!locked["Menu Accent"]) newConfig.menuAccent = (["Subtle", "None", "Bold"][Math.floor(Math.random() * 3)])!
+
+    setConfig(newConfig)
+    toast.success("Theme shuffled! 🎲")
+  }
+
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <div className="fixed bottom-4 left-4 z-50 flex flex-col gap-2">
-           <Button variant="default" size="icon" className="rounded-full shadow-xl h-12 w-12 bg-primary hover:scale-110 transition-transform">
-            <Settings2 className="h-6 w-6" />
-          </Button>
-        </div>
+        <Button variant="outline" className="w-full h-12 gap-2 border-dashed hover:border-primary hover:text-primary transition-all">
+          <Settings2 className="h-4 w-4" />
+          <span>Customize Brand Colors & Style</span>
+        </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[350px] p-0 flex flex-col gap-0 border-r shadow-2xl h-screen">
+      <SheetContent side="right" className="w-[350px] p-0 flex flex-col gap-0 border-l shadow-2xl h-screen">
         <div className="p-6 border-b bg-muted/30">
           <SheetHeader className="mb-4">
             <div className="flex items-center justify-between">
@@ -206,7 +228,7 @@ export function ThemeCustomizer() {
             <SheetDescription>Replicating shadcn/ui create experience.</SheetDescription>
           </SheetHeader>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1 h-9 gap-2" size="sm">
+            <Button variant="outline" className="flex-1 h-9 gap-2" size="sm" onClick={shuffle}>
               <RotateCcw className="h-3.5 w-3.5" /> Shuffle
             </Button>
             <Button variant={mode === "dark" ? "default" : "outline"} size="icon" className="h-9 w-9" onClick={() => setMode(mode === "dark" ? "light" : "dark")}>
@@ -217,7 +239,7 @@ export function ThemeCustomizer() {
 
         <div className="flex-1 overflow-y-auto px-6">
           <div className="space-y-8 py-6">
-            <ConfigSection title="Style" value={config.style}>
+            <ConfigSection title="Style" value={config.style} locked={locked["Style"]} onToggleLock={() => toggleLock("Style")}>
               <div className="grid grid-cols-2 gap-2">
                 {STYLES.map((s) => (
                   <ConfigButton 
@@ -230,7 +252,7 @@ export function ThemeCustomizer() {
               </div>
             </ConfigSection>
 
-            <ConfigSection title="Base Color" value={config.baseColor}>
+            <ConfigSection title="Base Color" value={config.baseColor} locked={locked["Base Color"]} onToggleLock={() => toggleLock("Base Color")}>
               <div className="grid grid-cols-2 gap-2">
                 {BASE_COLORS.map((c) => (
                   <ConfigButton 
@@ -248,7 +270,7 @@ export function ThemeCustomizer() {
               </div>
             </ConfigSection>
 
-            <ConfigSection title="Color" value={config.color}>
+            <ConfigSection title="Color" value={config.color} locked={locked["Color"]} onToggleLock={() => toggleLock("Color")}>
               <div className="grid grid-cols-3 gap-2">
                 {ACCENT_COLORS.map((c) => (
                   <ConfigButton 
@@ -307,7 +329,7 @@ export function ThemeCustomizer() {
               </div>
             </ConfigSection>
 
-            <ConfigSection title="Chart Color" value={config.chartColor}>
+            <ConfigSection title="Chart Color" value={config.chartColor} locked={locked["Chart Color"]} onToggleLock={() => toggleLock("Chart Color")}>
               <div className="grid grid-cols-3 gap-2">
                 {ACCENT_COLORS.map((c) => (
                   <ConfigButton 
@@ -366,7 +388,7 @@ export function ThemeCustomizer() {
               </div>
             </ConfigSection>
 
-             <ConfigSection title="Heading Font" value={config.fontHeading}>
+             <ConfigSection title="Heading Font" value={config.fontHeading} locked={locked["Heading Font"]} onToggleLock={() => toggleLock("Heading Font")}>
               <Select value={config.fontHeading} onValueChange={(v) => updateConfig("fontHeading", v)}>
                 <SelectTrigger className="w-full h-9 text-xs">
                   <Type className="h-3 w-3 mr-2 text-muted-foreground" />
@@ -382,7 +404,7 @@ export function ThemeCustomizer() {
               </Select>
             </ConfigSection>
 
-            <ConfigSection title="Body Font" value={config.fontBody}>
+            <ConfigSection title="Body Font" value={config.fontBody} locked={locked["Body Font"]} onToggleLock={() => toggleLock("Body Font")}>
               <Select value={config.fontBody} onValueChange={(v) => updateConfig("fontBody", v)}>
                 <SelectTrigger className="w-full h-9 text-xs">
                   <Type className="h-3 w-3 mr-2 text-muted-foreground" />
@@ -398,7 +420,7 @@ export function ThemeCustomizer() {
               </Select>
             </ConfigSection>
 
-            <ConfigSection title="Radius" value={config.radius}>
+            <ConfigSection title="Radius" value={config.radius} locked={locked["Radius"]} onToggleLock={() => toggleLock("Radius")}>
               <div className="grid grid-cols-3 gap-2">
                 {RADIUS_OPTIONS.map((r) => (
                   <ConfigButton 
@@ -411,7 +433,7 @@ export function ThemeCustomizer() {
               </div>
             </ConfigSection>
 
-            <ConfigSection title="Menu" value={config.menu}>
+            <ConfigSection title="Menu" value={config.menu} locked={locked["Menu"]} onToggleLock={() => toggleLock("Menu")}>
               <div className="grid grid-cols-2 gap-2">
                 {["Default", "Inverted"].map((m) => (
                   <ConfigButton 
@@ -424,7 +446,7 @@ export function ThemeCustomizer() {
               </div>
             </ConfigSection>
 
-            <ConfigSection title="Appearance" value={config.menuAppearance}>
+            <ConfigSection title="Appearance" value={config.menuAppearance} locked={locked["Menu Appearance"]} onToggleLock={() => toggleLock("Menu Appearance")}>
               <div className="grid grid-cols-2 gap-2">
                 {["Solid", "Translucent"].map((a) => (
                   <ConfigButton 
@@ -437,7 +459,7 @@ export function ThemeCustomizer() {
               </div>
             </ConfigSection>
 
-            <ConfigSection title="Menu Accent" value={config.menuAccent}>
+            <ConfigSection title="Menu Accent" value={config.menuAccent} locked={locked["Menu Accent"]} onToggleLock={() => toggleLock("Menu Accent")}>
               <div className="grid grid-cols-3 gap-2">
                 {["Subtle", "None", "Bold"].map((a) => (
                   <ConfigButton 
@@ -455,9 +477,9 @@ export function ThemeCustomizer() {
         <div className="p-6 border-t bg-muted/30">
           <Button 
             className="w-full h-10 font-semibold shadow-lg" 
-            onClick={() => toast.success("Theme configuration saved!")}
+            onClick={() => toast.success("Theme configuration applied successfully!")}
           >
-            Create Project
+            Save & Apply Theme
           </Button>
         </div>
       </SheetContent>
@@ -465,13 +487,19 @@ export function ThemeCustomizer() {
   )
 }
 
-function ConfigSection({ title, value, children }: { title: string; value: string; children: React.ReactNode }) {
+function ConfigSection({ title, value, locked, onToggleLock, children }: { title: string; value: string; locked?: boolean; onToggleLock?: () => void; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</Label>
-          <Unlock className="h-3 w-3 text-muted-foreground/50 cursor-pointer hover:text-muted-foreground" />
+          <button onClick={onToggleLock} className="focus:outline-none">
+            {locked ? (
+              <Lock className="h-3 w-3 text-primary animate-in zoom-in duration-300" />
+            ) : (
+              <Unlock className="h-3 w-3 text-muted-foreground/50 cursor-pointer hover:text-muted-foreground" />
+            )}
+          </button>
         </div>
         <span className="text-xs font-medium bg-secondary px-2 py-0.5 rounded-full">{value}</span>
       </div>
