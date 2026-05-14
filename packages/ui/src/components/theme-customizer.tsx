@@ -29,6 +29,8 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 import { toast } from "sonner"
+import { updateSiteConfig } from "@workspace/database"
+import { Loader2 } from "lucide-react"
 
 const STYLES = ["Vega", "Nova", "Maia", "Lyra", "Mira", "Luma", "Sera"]
 
@@ -85,7 +87,7 @@ const RADIUS_OPTIONS = [
   { name: "Full", value: "9999" },
 ]
 
-export function ThemeCustomizer() {
+export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspaceId?: string }) {
   const { theme: mode, setTheme: setMode } = useTheme()
   const [config, setConfig] = React.useState({
     style: "Nova",
@@ -145,6 +147,24 @@ export function ThemeCustomizer() {
     
     localStorage.setItem("theme-config", JSON.stringify(config))
   }, [config])
+
+  const [isSaving, setIsSaving] = React.useState(false)
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const result = await updateSiteConfig(workspaceId, { theme: config })
+      if (result.success) {
+        toast.success("Theme saved to database for this workspace! 🚀")
+      } else {
+        toast.error("Failed to save theme: " + result.error)
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred while saving.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const updateConfig = (key: keyof typeof config, value: string) => {
     if (key === "style") {
@@ -477,9 +497,17 @@ export function ThemeCustomizer() {
         <div className="p-6 border-t bg-muted/30">
           <Button 
             className="w-full h-10 font-semibold shadow-lg" 
-            onClick={() => toast.success("Theme configuration applied successfully!")}
+            onClick={handleSave}
+            disabled={isSaving}
           >
-            Save & Apply Theme
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save & Apply Theme"
+            )}
           </Button>
         </div>
       </SheetContent>

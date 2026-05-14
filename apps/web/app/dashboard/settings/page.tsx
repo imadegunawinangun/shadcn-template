@@ -1,12 +1,21 @@
 "use client"
 
 import { DashboardLayout, DashboardHeader, DashboardShell } from "@workspace/dashboard"
-import { ProfileSettings, AppearanceSettings } from "@workspace/settings"
+import { ProfileSettings, AppearanceSettings, MediaSettings } from "@workspace/settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { navSections, currentUser } from "@/lib/navigation"
 
 
+import { useAuth } from "@clerk/nextjs"
+import { redirect } from "next/navigation"
+
 export default function SettingsPage() {
+  const { orgId, isLoaded } = useAuth()
+  
+  if (isLoaded && !orgId) {
+    redirect("/select-workspace")
+  }
+
   return (
     <DashboardLayout 
       sections={navSections} 
@@ -23,6 +32,7 @@ export default function SettingsPage() {
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
           
@@ -31,7 +41,11 @@ export default function SettingsPage() {
           </TabsContent>
           
           <TabsContent value="appearance" className="space-y-4">
-            <AppearanceSettings />
+            <AppearanceSettings workspaceId={orgId || undefined} />
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-4">
+            <MediaSettings />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-4 text-sm text-muted-foreground">

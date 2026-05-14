@@ -3,7 +3,7 @@ import { LucideIcon } from "lucide-react"
 export interface NavItem {
   title: string
   href: string
-  icon?: LucideIcon
+  icon?: LucideIcon | string
   disabled?: boolean
   external?: boolean
   label?: string
@@ -20,6 +20,19 @@ export interface UserInfo {
   image?: string
 }
 
-export interface DashboardConfig {
-  sections: NavSection[]
+export interface DashboardLayoutProps {
+  children: React.ReactNode
+  sections?: NavSection[]
+  appId?: string
+  isAdmin?: boolean
+  user?: UserInfo
+  brand?: {
+    name: string
+    logo: React.ReactNode
+  }
+  breadcrumbs?: { title: string; href?: string }[]
+  actions?: React.ReactNode
+  workspaces?: { id: string; name: string; slug: string }[]
+  activeWorkspaceId?: string
+  isFullWidth?: boolean
 }

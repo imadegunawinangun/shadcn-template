@@ -47,6 +47,12 @@ import { ThemeCustomizer } from "@workspace/ui/components/theme-customizer"
 import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert"
 
 export default function LandingPage() {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <div className="relative min-h-screen bg-background font-body overflow-x-hidden">
       {/* Dynamic Background */}
@@ -80,7 +86,7 @@ export default function LandingPage() {
               </SignInButton>
             </Show>
             <Show when="signed-in">
-              <Link href="/dashboard">
+              <Link href="/select-workspace">
                 <Button size="sm" variant="outline" className="rounded-full px-6 hover:bg-primary/5 hover:-translate-y-0.5 transition-all duration-300 active:scale-95">Go to Dashboard</Button>
               </Link>
               <UserButton />
@@ -175,6 +181,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
+            {mounted ? (
             <Tabs defaultValue="ui" className="w-full">
               <TabsList className="grid w-full max-w-2xl grid-cols-4 mb-8">
                 <TabsTrigger value="ui">Core UI</TabsTrigger>
@@ -350,6 +357,11 @@ export default function LandingPage() {
                 </div>
               </TabsContent>
             </Tabs>
+            ) : (
+              <div className="h-[400px] w-full bg-muted/10 animate-pulse rounded-3xl border border-dashed flex items-center justify-center">
+                <p className="text-muted-foreground text-sm">Initializing components...</p>
+              </div>
+            )}
           </div>
         </section>
 

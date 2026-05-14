@@ -13,12 +13,15 @@ import {
 } from "@workspace/ui/components/breadcrumb"
 import { ThemeSwitcher } from "@workspace/ui/components/theme-switcher"
 
+import { GlobalSearch } from "@workspace/search"
+
 interface SiteHeaderProps {
   breadcrumbs?: { title: string; href?: string }[]
   actions?: React.ReactNode
+  appId?: string
 }
 
-export function SiteHeader({ breadcrumbs, actions }: SiteHeaderProps) {
+export function SiteHeader({ breadcrumbs, actions, appId }: SiteHeaderProps) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 sticky top-0 bg-background/80 backdrop-blur-md z-10">
       <div className="flex items-center gap-2 flex-1">
@@ -45,6 +48,9 @@ export function SiteHeader({ breadcrumbs, actions }: SiteHeaderProps) {
             ))}
           </BreadcrumbList>
         </Breadcrumb>
+      </div>
+      <div className="flex-1 flex justify-center max-w-md">
+        <GlobalSearch appId={appId} />
       </div>
       <div className="flex items-center gap-2">
         <ThemeSwitcher />

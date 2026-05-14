@@ -1,69 +1,73 @@
-"use client"
-
-import { useState } from "react"
 import { DashboardLayout, DashboardHeader, DashboardShell } from "@workspace/dashboard"
-import { MemberList, WorkspaceSettings, Member } from "@workspace/users"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
-import { navSections, currentUser } from "@/lib/navigation"
-import { mockMembers } from "@/lib/mock-data"
-import { toast } from "sonner"
+import { getTeamMembers, getWorkspace, syncClerkOrgWithWorkspace } from "@workspace/database"
+import { TeamClient } from "./team-client"
+import { auth, currentUser as getClerkUser } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
 
+export default async function TeamPage() {
+  const { orgId, orgRole, orgSlug } = await auth()
+  const user = await getClerkUser()
 
-export default function TeamPage() {
-  const [members, setMembers] = useState<Member[]>(mockMembers)
-  const [workspace, setWorkspace] = useState({
-    name: "My Workspace",
-    slug: "my-workspace"
+  if (!user) {
+    redirect("/sign-in")
+  }
+
+  // If the user has not selected an organization, redirect to selection page
+  if (!orgId) {
+    redirect("/select-workspace")
+  }
+  
+  // Sync the current Clerk organization with our database
+  const activeWorkspace = await syncClerkOrgWithWorkspace({
+    id: user.id,
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.emailAddresses[0].emailAddress,
+    image: user.imageUrl
+  }, {
+    id: orgId,
+    name: "Workspace", // Will be updated by sync function from Clerk API
+    slug: orgSlug || orgId,
+    role: orgRole || "member"
   })
 
-  const handleMemberAction = (member: Member, action: string) => {
-    if (action === "add") {
-      setMembers(prev => [...prev, member])
-    } else if (action === "update") {
-      setMembers(prev => prev.map(m => m.id === member.id ? member : m))
-    } else if (action === "remove") {
-      setMembers(prev => prev.filter(m => m.id !== member.id))
-      toast.success(`Removed ${member.name}`)
-    }
+  if (!activeWorkspace) {
+    return <div>Failed to sync workspace.</div>
   }
+
+  const [members, workspace] = await Promise.all([
+    getTeamMembers(orgId),
+    getWorkspace(orgId)
+  ])
+
+  if (!workspace) {
+    return <div>Workspace not found in database.</div>
+  }
+
+  const isAdmin = orgRole === "org:admin" || orgRole === "admin"
 
   return (
     <DashboardLayout 
-      sections={navSections} 
-      user={currentUser}
+      isAdmin={isAdmin} // Navigation resolved automatically inside DashboardLayout
+      user={{
+        name: user?.firstName ? `${user.firstName} ${user.lastName}` : "User",
+        email: user?.emailAddresses[0].emailAddress || "",
+        image: user?.imageUrl || ""
+      }}
+      activeWorkspaceId={orgId}
       breadcrumbs={[{ title: "Dashboard", href: "/dashboard" }, { title: "Team" }]}
     >
       <DashboardShell>
         <DashboardHeader
-          heading="Team Management"
+          heading={`${workspace.name} - Team`}
           text="Manage your team members and workspace settings."
         />
-        
-        <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden">
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="settings">Workspace Settings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="members" className="space-y-4">
-            <MemberList 
-              members={members} 
-              onAction={handleMemberAction} 
-            />
-          </TabsContent>
-          
-          <TabsContent value="settings" className="space-y-4">
-            <WorkspaceSettings 
-              defaultValues={workspace} 
-              onUpdate={(data) => {
-                setWorkspace(data)
-                toast.success("Workspace settings updated")
-              }} 
-            />
-          </TabsContent>
-        </Tabs>
+        <TeamClient 
+          initialMembers={members} 
+          initialWorkspace={workspace} 
+          currentUserId={user.id}
+          isAdmin={isAdmin}
+        />
       </DashboardShell>
     </DashboardLayout>
   )
 }
-

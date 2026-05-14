@@ -46,8 +46,11 @@ const fontMono = Geist_Mono({
 })
 
 import { ClerkProvider } from "@clerk/nextjs"
-
+import { auth } from "@clerk/nextjs/server"
 import { Toaster } from "sonner"
+import { getSiteConfig } from "@workspace/database"
+import { ThemeApplier } from "@/components/theme-applier"
+import { ImageKitProviderWrapper } from "@/components/imagekit-provider"
 
 export default function RootLayout({
   children,
@@ -95,7 +98,11 @@ export default function RootLayout({
         <body>
           <ThemeProvider>
             <TooltipProvider delayDuration={0}>
-              {children}
+              <ImageKitProviderWrapper>
+                {/* @ts-ignore - Server Component in Layout */}
+                <ThemeApplierWrapper />
+                {children}
+              </ImageKitProviderWrapper>
               <Toaster position="top-right" expand={true} richColors />
             </TooltipProvider>
           </ThemeProvider>
@@ -104,5 +111,23 @@ export default function RootLayout({
 
     </ClerkProvider>
   )
+}
+
+async function ThemeApplierWrapper() {
+  // Public pages and general layout use the "platform" theme
+  const workspaceId = "platform"; 
+  let config = await getSiteConfig(workspaceId);
+  
+  // Fallback to any config if platform theme is not yet set
+  if (!config) {
+    const { db } = await import("@workspace/database");
+    const { siteConfig } = await import("@workspace/database");
+    const results = await db?.select().from(siteConfig).limit(1);
+    if (results && results[0]) {
+      config = results[0];
+    }
+  }
+  
+  return <ThemeApplier initialConfig={config?.theme} />;
 }
 

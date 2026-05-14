@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { toast } from "sonner"
 import { 
   Search, 
@@ -23,10 +23,13 @@ import {
   ChevronRight,
   MoreHorizontal
 } from "lucide-react"
+import { IKImage, IKVideo } from "imagekitio-next"
 
 import { useRef } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { TypographyH3, TypographyP } from "@workspace/ui/components/typography"
+import { ImageEditor, ImageEditorResult } from "@workspace/ui/components/image-editor"
+import { Area } from "react-easy-crop"
 import { Input } from "@workspace/ui/components/input"
 import { Card } from "@workspace/ui/components/card"
 import { Checkbox } from "@workspace/ui/components/checkbox"
@@ -63,16 +66,98 @@ export interface Asset {
   type: "image" | "video" | "document"
   size: string
   url: string
+  path: string
   createdAt: string
 }
 
 interface MediaGalleryProps {
   assets: Asset[]
   onAction?: (asset: Asset, action: string) => void
-  onUpload?: (base64: string, name: string) => Promise<Asset>
+  onUpload?: (source: string, name: string) => Promise<Asset>
+  onRename?: (id: string, newName: string, oldName: string) => Promise<void>
+  onCopy?: (newUrl: string, originalName: string) => Promise<Asset>
 }
-export function MediaGallery({ assets: initialAssets, onAction, onUpload }: MediaGalleryProps) {
+export function MediaGallery({ assets: initialAssets, onAction, onUpload, onRename, onCopy }: MediaGalleryProps) {
   const [assets, setAssets] = useState<Asset[]>(initialAssets)
+  const [isCropOpen, setIsCropOpen] = useState(false)
+  const [croppingAsset, setCroppingAsset] = useState<Asset | null>(null)
+
+  const handleEditorSave = (result: ImageEditorResult) => {
+    if (!croppingAsset) return
+    
+    // Stage 1: Orientation (Rotation and Flips must come first)
+    const orientation: string[] = []
+    if (result.rotation !== 0) orientation.push(`r-${result.rotation}`)
+    if (result.flipH) orientation.push('flip-h')
+    if (result.flipV) orientation.push('flip-v')
+    
+    // Stage 2: Crop (Extracted from the oriented image)
+    const crop: string[] = []
+    if (result.pixels.width && result.pixels.height) {
+      crop.push(`cm-extract,x-${Math.round(result.pixels.x)},y-${Math.round(result.pixels.y)},w-${Math.round(result.pixels.width)},h-${Math.round(result.pixels.height)}`)
+    }
+    
+    // Stage 3: Filters & Adjustments
+    const effects: string[] = []
+    if (result.filters.brightness !== 0) effects.push(`b-${100 + result.filters.brightness}`)
+    if (result.filters.contrast !== 0) effects.push(`con-${100 + result.filters.contrast}`)
+    if (result.filters.saturation !== 0) effects.push(`s-${100 + result.filters.saturation}`)
+
+    // Mapping filters
+    const af = (result.filters as any).activeFilter
+    if (af === 'vivid') effects.push('s-150,con-110')
+    else if (af === 'retro') effects.push('sepia-20,con-110,b-105')
+    else if (af === 'mono') effects.push('e-grayscale,con-130')
+    else if (af === 'cool') effects.push('b-105,con-105')
+    else if (af === 'warm') effects.push('sepia-10,b-105')
+    else if (af === 'grayscale') effects.push('e-grayscale')
+    else if (af === 'sepia') effects.push('e-sepia')
+
+    // Construct final transformation string with stages (:)
+    const stages = [
+      orientation.join(','),
+      crop.join(','),
+      effects.join(',')
+    ].filter(Boolean)
+    
+    const trPath = stages.length > 0 ? `tr:${stages.join(':')}` : ''
+    
+    // Fallback URL based transformation
+    const urlParts = croppingAsset.url.split('/')
+    const hostIndex = urlParts.findIndex(part => part.includes('ik.imagekit.io'))
+    const idIndex = hostIndex + 1
+    
+    let fallbackUrl = croppingAsset.url.split('?')[0]
+    if (trPath && hostIndex !== -1 && idIndex < urlParts.length) {
+      const parts = [...urlParts]
+      parts.splice(idIndex + 1, 0, trPath)
+      fallbackUrl = parts.join('/').split('?')[0]
+    }
+
+    // USE BAKED BASE64 IF AVAILABLE (More reliable for filters/flips)
+    const finalSource = (result as any).base64 || fallbackUrl
+      
+    if (onCopy) {
+      toast.promise(onCopy(finalSource, croppingAsset.name), {
+        loading: 'Saving edited version to database...',
+        success: 'Copy created successfully!',
+        error: 'Failed to create copy'
+      })
+    } else {
+      setAssets(prev => prev.map(a => 
+        a.id === croppingAsset.id ? { ...a, url: newUrl } : a
+      ))
+      toast.success("Image preview updated")
+    }
+    
+    setIsCropOpen(false)
+    setCroppingAsset(null)
+  }
+
+  // Sinkronisasi state internal saat prop assets dari parent berubah
+  useEffect(() => {
+    setAssets(initialAssets)
+  }, [initialAssets])
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [isUploadOpen, setIsUploadOpen] = useState(false)
@@ -172,12 +257,26 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload }: Medi
     toast.success(`Downloading ${asset.name}`)
   }
 
-  const handleRename = () => {
-    if (!renamingAsset || !newName.trim()) return
-    setAssets(prev => prev.map(a => a.id === renamingAsset.id ? { ...a, name: newName } : a))
-    toast.success("Asset renamed")
-    setRenamingAsset(null)
-    setNewName("")
+  const [isRenaming, setIsRenaming] = useState(false)
+  const handleRename = async () => {
+    if (!renamingAsset || !newName.trim() || isRenaming) return
+    
+    setIsRenaming(true)
+    try {
+      if (onRename) {
+        await onRename(renamingAsset.path, newName.trim(), renamingAsset.name)
+      }
+      
+      setAssets(prev => prev.map(a => a.id === renamingAsset.id ? { ...a, name: newName.trim() } : a))
+      toast.success("Asset renamed")
+      setRenamingAsset(null)
+      setNewName("")
+    } catch (error) {
+      console.error("Rename error:", error)
+      toast.error("Failed to rename asset")
+    } finally {
+      setIsRenaming(false)
+    }
   }
 
   const toggleSelectAll = () => {
@@ -364,11 +463,21 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload }: Medi
               <div className="relative aspect-square w-full">
                 {asset.type === "image" ? (
                   <div className="w-full h-full overflow-hidden bg-muted cursor-pointer" onClick={() => setPreviewAsset(asset)}>
-                    <img 
-                      src={asset.url} 
-                      alt={asset.name} 
-                      className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                    />
+                    {asset.url.includes("ik.imagekit.io") ? (
+                      <IKImage
+                        src={asset.url}
+                        transformation={[{ width: "300", height: "300", cropMode: "extract" }]}
+                        loading="lazy"
+                        alt={asset.name}
+                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <img 
+                        src={asset.url} 
+                        alt={asset.name} 
+                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="w-full h-full bg-muted/50 flex flex-col items-center justify-center gap-3 cursor-pointer" onClick={() => setPreviewAsset(asset)}>
@@ -418,6 +527,11 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload }: Medi
                       <DropdownMenuItem onClick={() => { setRenamingAsset(asset); setNewName(asset.name); }}>
                         Rename
                       </DropdownMenuItem>
+                      {asset.type === "image" && (
+                        <DropdownMenuItem onClick={() => { setCroppingAsset(asset); setIsCropOpen(true); }}>
+                          Edit Image
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem>Move to Folder</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(asset)}>
@@ -550,8 +664,13 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload }: Medi
       <Dialog open={!!previewAsset} onOpenChange={(open) => !open && setPreviewAsset(null)}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-none" showCloseButton={false}>
           {previewAsset && (
-            <div className="flex flex-col h-[80vh]">
-              <div className="flex items-center justify-between p-4 bg-background/10 backdrop-blur-md">
+            <>
+              <DialogHeader className="sr-only">
+                <DialogTitle>{previewAsset.name}</DialogTitle>
+                <DialogDescription>Asset preview for {previewAsset.name}</DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col h-[80vh] relative">
+                <div className="flex items-center justify-between p-4 bg-background/20 backdrop-blur-md z-10 border-b border-white/10">
                 <div className="flex flex-col">
                   <h3 className="text-white font-medium">{previewAsset.name}</h3>
                   <p className="text-white/60 text-xs">{previewAsset.size} • {formatDate(previewAsset.createdAt)}</p>
@@ -567,9 +686,26 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload }: Medi
               </div>
               <div className="flex-1 flex items-center justify-center p-8 overflow-hidden">
                 {previewAsset.type === "image" ? (
-                  <img src={previewAsset.url} alt="" className="max-h-full max-w-full object-contain shadow-2xl" />
+                  previewAsset.url.includes("ik.imagekit.io") ? (
+                    <IKImage
+                      src={previewAsset.url}
+                      transformation={[{ width: "1200" }]}
+                      alt={previewAsset.name}
+                      className="max-h-full max-w-full object-contain shadow-2xl"
+                    />
+                  ) : (
+                    <img src={previewAsset.url} alt="" className="max-h-full max-w-full object-contain shadow-2xl" />
+                  )
                 ) : previewAsset.type === "video" ? (
-                  <video src={previewAsset.url} controls className="max-h-full max-w-full" />
+                  previewAsset.url.includes("ik.imagekit.io") ? (
+                    <IKVideo
+                      src={previewAsset.url}
+                      controls={true}
+                      className="max-h-full max-w-full"
+                    />
+                  ) : (
+                    <video src={previewAsset.url} controls className="max-h-full max-w-full" />
+                  )
                 ) : (
                   <div className="flex flex-col items-center gap-4 text-white">
                     <FileText className="h-24 w-24 opacity-20" />
@@ -579,8 +715,9 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload }: Medi
                 )}
               </div>
             </div>
-          )}
-        </DialogContent>
+          </>
+        )}
+      </DialogContent>
       </Dialog>
 
       {/* Rename Dialog */}
@@ -602,9 +739,44 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload }: Medi
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenamingAsset(null)}>Cancel</Button>
-            <Button onClick={handleRename}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setRenamingAsset(null)} disabled={isRenaming}>Cancel</Button>
+            <Button onClick={handleRename} disabled={isRenaming}>
+              {isRenaming ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Renaming...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Editor Dialog */}
+      <Dialog open={isCropOpen} onOpenChange={(open) => !open && setIsCropOpen(false)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-transparent shadow-none">
+          <div className="bg-background rounded-lg overflow-hidden border shadow-2xl">
+            <div className="p-6 border-b flex items-center justify-between bg-muted/30">
+              <div>
+                <DialogTitle className="text-xl font-bold tracking-tight">Image Editor</DialogTitle>
+                <DialogDescription className="text-xs">
+                  Apply filters, adjustments and crops to your asset.
+                </DialogDescription>
+              </div>
+            </div>
+            
+            <div className="p-4 sm:p-6">
+              {croppingAsset && (
+                <ImageEditor 
+                  image={croppingAsset.url.split('?')[0]} 
+                  onSave={handleEditorSave}
+                  saveLabel="Make a copy on database"
+                />
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

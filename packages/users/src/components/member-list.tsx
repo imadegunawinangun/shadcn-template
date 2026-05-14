@@ -33,24 +33,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@workspace/ui/components/dialog"
-import { MoreHorizontal, UserPlus, Shield, UserX, Pencil, Search, Mail, User } from "lucide-react"
+import { MoreHorizontal, UserPlus, Shield, UserX, Pencil, Search, Mail, User, Building2, LayoutGrid } from "lucide-react"
 
 export interface Member {
   id: string
   name: string
   email: string
   role: string
+  appRoles?: Record<string, string>
   status: "Active" | "Pending" | "Inactive"
   image?: string
 }
 
 interface MemberListProps {
   members: Member[]
+  isAdmin?: boolean
+  availableApps?: string[]
   onInvite?: (email: string) => void
   onAction?: (member: Member, action: string) => void
 }
 
-export function MemberList({ members, onInvite, onAction }: MemberListProps) {
+export function MemberList({ members, isAdmin, availableApps, onInvite, onAction }: MemberListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
@@ -58,6 +61,7 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
   
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [roleMember, setRoleMember] = useState<Member | null>(null)
+  const [appRoleMember, setAppRoleMember] = useState<Member | null>(null)
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => 
@@ -87,6 +91,15 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
     }
   }
 
+  const handleUpdateAppRole = (appId: string, role: string) => {
+    if (appRoleMember) {
+      const newAppRoles = { ...appRoleMember.appRoles, [appId]: role }
+      onAction?.({ ...appRoleMember, appRoles: newAppRoles }, "updateAppRoles")
+      setAppRoleMember(prev => prev ? { ...prev, appRoles: newAppRoles } : null)
+      toast.success(`${appId} role updated to ${role}`)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -111,7 +124,7 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
                 id: Math.random().toString(36).substr(2, 9),
                 name: inviteName,
                 email: inviteEmail,
-                role: "Member",
+                role: "member",
                 status: "Pending"
               };
               onAction?.(newMember, "add");
@@ -193,22 +206,67 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
       <Dialog open={!!roleMember} onOpenChange={(open) => !open && setRoleMember(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Role</DialogTitle>
-            <DialogDescription>Select a new role for {roleMember?.name}.</DialogDescription>
+            <DialogTitle>Change Org Role</DialogTitle>
+            <DialogDescription>Select a new organisation-level role for {roleMember?.name}.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-4">
-            {["Admin", "Member", "Viewer"].map((role) => (
+            {["admin", "member", "viewer"].map((role) => (
               <Button 
                 key={role} 
                 variant={roleMember?.role === role ? "secondary" : "outline"}
                 className="justify-start gap-2"
                 onClick={() => handleUpdateRole(role)}
               >
-                <Shield className={cn("h-4 w-4", roleMember?.role === role ? "text-primary" : "text-muted-foreground")} />
+                <Building2 className={cn("h-4 w-4", roleMember?.role === role ? "text-primary" : "text-muted-foreground")} />
                 {role}
               </Button>
             ))}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!appRoleMember} onOpenChange={(open) => !open && setAppRoleMember(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Change App Role</DialogTitle>
+            <DialogDescription>Configure specific application access for {appRoleMember?.name}.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {(availableApps || ["website", "pos", "accounting"]).map((appId) => (
+              <div key={appId} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{appId}</h4>
+                  <Badge variant="outline" className="text-[10px]">
+                    {appRoleMember?.appRoles?.[appId] || "No Access"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {["admin", "member", "viewer"].map((role) => (
+                    <Button
+                      key={role}
+                      variant={appRoleMember?.appRoles?.[appId] === role ? "secondary" : "outline"}
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => handleUpdateAppRole(appId, role)}
+                    >
+                      {role}
+                    </Button>
+                  ))}
+                  <Button
+                    variant={!appRoleMember?.appRoles?.[appId] ? "secondary" : "outline"}
+                    size="sm"
+                    className="h-8 text-xs text-destructive hover:text-destructive"
+                    onClick={() => handleUpdateAppRole(appId, "")}
+                  >
+                    None
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setAppRoleMember(null)}>Done</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -230,6 +288,7 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
               <TableRow className="bg-muted/30 hover:bg-muted/30 border-none">
                 <TableHead className="px-6 h-12">Member</TableHead>
                 <TableHead className="px-6 h-12">Role</TableHead>
+                <TableHead className="px-6 h-12">App Roles</TableHead>
                 <TableHead className="px-6 h-12">Status</TableHead>
                 <TableHead className="px-6 h-12 text-right">Actions</TableHead>
               </TableRow>
@@ -259,9 +318,24 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
                       </div>
                     </TableCell>
                     <TableCell className="py-4 px-6">
-                      <Badge variant="secondary" className="font-medium bg-muted/50 text-muted-foreground border-none">
+                      <Badge variant="secondary" className="font-medium bg-muted/50 text-muted-foreground border-none capitalize">
                         {member.role}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="py-4 px-6">
+                      <div className="flex flex-wrap gap-1">
+                        {member.appRoles && Object.entries(member.appRoles).filter(([_, role]) => role).length > 0 ? (
+                          Object.entries(member.appRoles)
+                            .filter(([_, role]) => role)
+                            .map(([appId, role]) => (
+                              <Badge key={appId} variant="outline" className="text-[10px] px-1 py-0 h-4 border-primary/20 text-primary bg-primary/5">
+                                {appId}: {role}
+                              </Badge>
+                            ))
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground italic">No app roles</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="py-4 px-6">
                       <Badge 
@@ -277,7 +351,14 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
                       </Badge>
                     </TableCell>
                     <TableCell className="py-4 px-6 text-right">
-                      <MemberActions member={member} onEdit={() => setEditingMember(member)} onRole={() => setRoleMember(member)} onRemove={() => handleRemove(member)} />
+                      <MemberActions 
+                        member={member} 
+                        isAdmin={isAdmin}
+                        onEdit={() => setEditingMember(member)} 
+                        onRole={() => setRoleMember(member)} 
+                        onAppRoles={() => setAppRoleMember(member)}
+                        onRemove={() => handleRemove(member)} 
+                      />
                     </TableCell>
                   </TableRow>
                 ))
@@ -318,14 +399,28 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
                       </Badge>
                     </div>
                     <span className="text-xs text-muted-foreground truncate">{member.email}</span>
-                    <div className="mt-0.5">
-                      <Badge variant="secondary" className="text-[10px] font-medium bg-muted/50 text-muted-foreground border-none h-5 px-2">
+                    <div className="mt-0.5 flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-[10px] font-medium bg-muted/50 text-muted-foreground border-none h-5 px-2 capitalize shrink-0">
                         {member.role}
                       </Badge>
+                      {member.appRoles && Object.entries(member.appRoles)
+                        .filter(([_, role]) => role)
+                        .map(([appId, role]) => (
+                          <Badge key={appId} variant="outline" className="text-[9px] px-1 py-0 h-4 border-primary/20 text-primary bg-primary/5 shrink-0">
+                            {appId[0].toUpperCase()}: {role}
+                          </Badge>
+                        ))}
                     </div>
                   </div>
                 </div>
-                <MemberActions member={member} onEdit={() => setEditingMember(member)} onRole={() => setRoleMember(member)} onRemove={() => handleRemove(member)} />
+                <MemberActions 
+                  member={member} 
+                  isAdmin={isAdmin}
+                  onEdit={() => setEditingMember(member)} 
+                  onRole={() => setRoleMember(member)} 
+                  onAppRoles={() => setAppRoleMember(member)}
+                  onRemove={() => handleRemove(member)} 
+                />
               </div>
             ))
           )}
@@ -335,7 +430,23 @@ export function MemberList({ members, onInvite, onAction }: MemberListProps) {
   )
 }
 
-function MemberActions({ member, onEdit, onRole, onRemove }: { member: Member, onEdit: () => void, onRole: () => void, onRemove: () => void }) {
+function MemberActions({ 
+  member, 
+  isAdmin,
+  onEdit, 
+  onRole, 
+  onAppRoles,
+  onRemove 
+}: { 
+  member: Member, 
+  isAdmin?: boolean,
+  onEdit: () => void, 
+  onRole: () => void, 
+  onAppRoles: () => void,
+  onRemove: () => void 
+}) {
+  if (!isAdmin) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -352,8 +463,12 @@ function MemberActions({ member, onEdit, onRole, onRemove }: { member: Member, o
           Edit Member
         </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer" onClick={onRole}>
-          <Shield className="mr-2 h-4 w-4" />
-          Change Role
+          <Building2 className="mr-2 h-4 w-4" />
+          Change Org Role
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer" onClick={onAppRoles}>
+          <LayoutGrid className="mr-2 h-4 w-4" />
+          Change App Role
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
