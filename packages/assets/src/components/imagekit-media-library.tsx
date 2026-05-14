@@ -52,7 +52,7 @@ export function ImageKitMediaLibrary({ publicKey, urlEndpoint, onSelect }: Image
           // Initialize widget with config and callback as second argument
           const config = {
             container: containerRef.current,
-            view: 'inline',
+            view: 'inline' as const,
             renderOpenButton: false,
             width: '100%',
             height: '600px',
@@ -73,7 +73,7 @@ export function ImageKitMediaLibrary({ publicKey, urlEndpoint, onSelect }: Image
           } catch (e) {
             console.warn("Failed to init with 2 arguments, trying 1 argument with callback in config")
             // Pattern 2: Callback inside config (older versions)
-            widgetInstance.current = new ImagekitMediaLibraryWidget({
+            widgetInstance.current = new (ImagekitMediaLibraryWidget as any)({
               ...config,
               callback: handleCallback
             })

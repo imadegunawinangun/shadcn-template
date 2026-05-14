@@ -29,7 +29,7 @@ import { useRef } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { TypographyH3, TypographyP } from "@workspace/ui/components/typography"
 import { ImageEditor, ImageEditorResult } from "@workspace/ui/components/image-editor"
-import { Area } from "react-easy-crop"
+// import { Area } from "react-easy-crop" // Removed unused import causing error
 import { Input } from "@workspace/ui/components/input"
 import { Card } from "@workspace/ui/components/card"
 import { Checkbox } from "@workspace/ui/components/checkbox"
@@ -145,7 +145,7 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload, onRena
       })
     } else {
       setAssets(prev => prev.map(a => 
-        a.id === croppingAsset.id ? { ...a, url: newUrl } : a
+        a.id === croppingAsset.id ? { ...a, url: finalSource } : a
       ))
       toast.success("Image preview updated")
     }
@@ -221,6 +221,7 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload, onRena
             type: type as Asset['type'],
             size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
             url: base64,
+            path: `mock/${file.name}`,
             createdAt: new Date().toISOString()
           }
         }
@@ -770,7 +771,7 @@ export function MediaGallery({ assets: initialAssets, onAction, onUpload, onRena
             <div className="p-4 sm:p-6">
               {croppingAsset && (
                 <ImageEditor 
-                  image={croppingAsset.url.split('?')[0]} 
+                  image={croppingAsset.url.split('?')[0] || ""} 
                   onSave={handleEditorSave}
                   saveLabel="Make a copy on database"
                 />

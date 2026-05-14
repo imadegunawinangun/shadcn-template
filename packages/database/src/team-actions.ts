@@ -37,7 +37,7 @@ export async function getTeamMembers(workspaceId: string): Promise<TeamMember[]>
       .innerJoin(user, eq(membership.userId, user.id))
       .where(eq(membership.workspaceId, workspaceId));
 
-    const formattedMembers: TeamMember[] = members.map((m) => ({
+    const formattedMembers: TeamMember[] = members.map((m: any) => ({
       ...m,
       appRoles: (m.appRoles as Record<string, string>) || {},
       status: "Active",
@@ -309,7 +309,7 @@ export async function removeMember(workspaceId: string, userId: string, isInvita
     } else {
       // 1. Remove from Clerk Organization
       try {
-        await client.organizations.removeOrganizationMember({
+        await client.organizations.deleteOrganizationMembership({
           organizationId: workspaceId,
           userId: userId,
         });
@@ -486,9 +486,8 @@ export async function updateWorkspace(workspaceId: string, data: { name?: string
 export async function deleteWorkspace(workspaceId: string) {
     if (!db) return { success: false };
     try {
-        await db.transaction(async (tx) => {
+        await db.transaction(async (tx: any) => {
             await tx.delete(membership).where(eq(membership.workspaceId, workspaceId));
-            await tx.delete(invitation).where(eq(invitation.workspaceId, workspaceId));
             await tx.delete(entity).where(eq(entity.workspaceId, workspaceId));
             await tx.delete(workspace).where(eq(workspace.id, workspaceId));
         });

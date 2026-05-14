@@ -23,15 +23,20 @@ import {
 import { cn } from "../lib/utils"
 
 export interface ImageEditorResult {
-  pixels: Crop // Use percentages
+  pixels: Crop
   filters: {
     brightness: number
     contrast: number
+    saturation: number
+    activeFilter: string
     grayscale: boolean
     sepia: boolean
     vivid: boolean
   }
   rotation: number
+  flipH: boolean
+  flipV: boolean
+  base64?: string
 }
 
 interface ImageEditorProps {
@@ -350,7 +355,6 @@ export function ImageEditor({
                   ${activeFilter === 'warm' ? 'sepia(0.2) brightness(1.05)' : ''}
                 `
               }}
-              onLoad={onImageLoad}
               className="block rounded-sm transition-all duration-300"
             />
           </ReactCrop>
@@ -437,7 +441,7 @@ export function ImageEditor({
                       min={1} 
                       max={3} 
                       step={0.1} 
-                      onValueChange={(v) => setZoom(v[0])}
+                      onValueChange={(v) => setZoom(v[0] ?? 1)}
                       className="flex-1"
                     />
                     <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground w-10 text-center">{zoom.toFixed(1)}x</span>
@@ -487,7 +491,7 @@ export function ImageEditor({
                 </div>
                 <div className="flex items-center gap-3">
                   <Sun className="h-3 w-3 text-muted-foreground/50" />
-                  <Slider value={[brightness]} min={-50} max={50} step={1} onValueChange={(v) => setBrightness(v[0])} className="flex-1" />
+                  <Slider value={[brightness]} min={-50} max={50} step={1} onValueChange={(v) => setBrightness(v[0] ?? 0)} className="flex-1" />
                   <Sun className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
@@ -504,7 +508,7 @@ export function ImageEditor({
                 </div>
                 <div className="flex items-center gap-3">
                   <ContrastIcon className="h-3 w-3 text-muted-foreground/50" />
-                  <Slider value={[contrast]} min={-50} max={50} step={1} onValueChange={(v) => setContrast(v[0])} className="flex-1" />
+                  <Slider value={[contrast]} min={-50} max={50} step={1} onValueChange={(v) => setContrast(v[0] ?? 0)} className="flex-1" />
                   <ContrastIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
@@ -521,7 +525,7 @@ export function ImageEditor({
                 </div>
                 <div className="flex items-center gap-3">
                   <Droplets className="h-3 w-3 text-muted-foreground/50" />
-                  <Slider value={[saturation]} min={-100} max={100} step={1} onValueChange={(v) => setSaturation(v[0])} className="flex-1" />
+                  <Slider value={[saturation]} min={-100} max={100} step={1} onValueChange={(v) => setSaturation(v[0] ?? 0)} className="flex-1" />
                   <Droplets className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>

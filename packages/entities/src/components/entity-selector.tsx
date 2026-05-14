@@ -47,7 +47,7 @@ export async function EntitySelector({
 
         <div className="grid gap-4">
           {entities.length > 0 ? (
-            entities.map((e) => (
+            entities.map((e: any) => (
               <Link key={e.id} href={`${nextPath}?entityId=${e.id}`}>
                 <Card className="bg-card border-border hover:border-primary/50 transition-all group overflow-hidden relative shadow-sm hover:shadow-md">
                   <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -173,8 +173,8 @@ importers:
         specifier: ^0.454.0
         version: 0.454.0(react@19.2.6)
       next:
-        specifier: 15.1.6
-        version: 15.1.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: 16.1.6
+        version: 16.1.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react:
         specifier: ^19.0.0
         version: 19.2.6
@@ -376,9 +376,18 @@ importers:
       drizzle-orm:
         specifier: ^0.39.1
         version: 0.39.3(@neondatabase/serverless@1.1.0)(kysely@0.28.17)(postgres@3.4.9)
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       postgres:
         specifier: ^3.4.5
         version: 3.4.9
+      react:
+        specifier: ^19.2.4
+        version: 19.2.6
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.6(react@19.2.6)
     devDependencies:
       '@workspace/typescript-config':
         specifier: workspace:*
@@ -410,6 +419,9 @@ importers:
       react:
         specifier: ^19.2.4
         version: 19.2.6
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.6(react@19.2.6)
     devDependencies:
       '@types/node':
         specifier: ^25.1.0
