@@ -232,7 +232,7 @@ export function MemberList({ members, isAdmin, availableApps, onInvite, onAction
             <DialogDescription>Configure specific application access for {appRoleMember?.name}.</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {(availableApps || ["website", "pos", "accounting"]).map((appId) => (
+            {(availableApps || ["stoknstok", "feednstok", "posnstok", "vetnstok"]).map((appId) => (
               <div key={appId} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{appId}</h4>

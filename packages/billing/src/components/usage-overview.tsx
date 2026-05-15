@@ -24,18 +24,20 @@ function UsageItem({ label, value, max, unit = "" }: UsageItemProps) {
 
 export function UsageOverview() {
   return (
-    <Card>
+    <Card className="bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">Usage Overview</CardTitle>
+        <CardTitle className="text-sm font-medium">Kapasitas Paket Starter</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <UsageItem label="Projects" value={2} max={3} />
-        <UsageItem label="Storage" value={0.8} max={1} unit="GB" />
-        <UsageItem label="Monthly Bandwidth" value={45} max={100} unit="GB" />
+        <UsageItem label="Jumlah Hewan Ternak" value={45} max={50} />
+        <UsageItem label="Data Pakan (feednstok)" value={12} max={20} unit=" Entri" />
+        <UsageItem label="Transaksi (posnstok)" value={8} max={10} unit=" Transaksi" />
         
-        <p className="text-[10px] text-muted-foreground pt-2 border-t">
-          Your free plan includes limited resources. Upgrade to Pro for unlimited access.
-        </p>
+        <div className="pt-2 border-t">
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Anda hampir mencapai batas paket **Starter**. Upgrade ke **Grow** untuk kuota tidak terbatas dan analisis FCR.
+          </p>
+        </div>
       </CardContent>
     </Card>
   )

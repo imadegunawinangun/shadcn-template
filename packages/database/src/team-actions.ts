@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "./index";
-import { membership, user, workspace, entity } from "./schema";
+import { membership, user, workspace, entity, workspaceAppRole } from "./schema";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { clerkClient } from "@clerk/nextjs/server";
@@ -30,20 +30,33 @@ export async function getTeamMembers(workspaceId: string): Promise<TeamMember[]>
         name: user.name,
         email: user.email,
         role: membership.role,
-        appRoles: membership.appRoles,
         image: user.image,
       })
       .from(membership)
       .innerJoin(user, eq(membership.userId, user.id))
       .where(eq(membership.workspaceId, workspaceId));
 
+    // 2. Get app-specific roles from the new table
+    const appRolesData = await db.query.workspaceAppRole.findMany({
+      where: eq(workspaceAppRole.workspaceId, workspaceId),
+    });
+
+    // Map app roles by userId
+    const appRolesByUser: Record<string, Record<string, string>> = {};
+    appRolesData.forEach((ar) => {
+      if (!appRolesByUser[ar.userId]) {
+        appRolesByUser[ar.userId] = {};
+      }
+      appRolesByUser[ar.userId][ar.appId] = ar.roleName;
+    });
+
     const formattedMembers: TeamMember[] = members.map((m: any) => ({
       ...m,
-      appRoles: (m.appRoles as Record<string, string>) || {},
+      appRoles: appRolesByUser[m.id] || {},
       status: "Active",
     }));
 
-    // 2. Get pending invitations from Clerk
+    // 3. Get pending invitations from Clerk
     const formattedInvites = await getPendingInvitations(workspaceId);
 
     return [...formattedMembers, ...formattedInvites];
@@ -382,17 +395,40 @@ export async function updateMemberAppRoles(workspaceId: string, userId: string, 
   if (!db) return { success: false };
   
   try {
-    await db.update(membership)
-      .set({ 
-        appRoles: appRoles as any,
-        updatedAt: new Date() 
-      })
-      .where(
-        and(
-          eq(membership.workspaceId, workspaceId),
-          eq(membership.userId, userId)
-        )
-      );
+    // Perform updates in a transaction for the new workspaceAppRole table
+    await db.transaction(async (tx) => {
+      for (const [appId, roleName] of Object.entries(appRoles)) {
+        if (!roleName) {
+          // If role is empty/none, delete the access
+          await tx.delete(workspaceAppRole)
+            .where(
+              and(
+                eq(workspaceAppRole.workspaceId, workspaceId),
+                eq(workspaceAppRole.userId, userId),
+                eq(workspaceAppRole.appId, appId)
+              )
+            );
+          continue;
+        }
+
+        // Upsert the app role
+        await tx.insert(workspaceAppRole)
+          .values({
+            workspaceId,
+            userId,
+            appId,
+            roleName,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [workspaceAppRole.workspaceId, workspaceAppRole.userId, workspaceAppRole.appId],
+            set: {
+              roleName,
+              updatedAt: new Date(),
+            },
+          });
+      }
+    });
       
     revalidatePath("/dashboard/team");
     return { success: true };

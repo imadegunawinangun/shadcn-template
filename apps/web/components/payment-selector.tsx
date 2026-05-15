@@ -12,25 +12,9 @@ import { cn } from '@workspace/ui/lib/utils';
 
 const providers = [
   {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'International Credit/Debit Card',
-    icon: CreditCard,
-    tag: 'Global',
-    tagColor: 'bg-blue-500/10 text-blue-600',
-  },
-  {
-    id: 'midtrans',
-    name: 'Midtrans',
-    description: 'QRIS, VA, GoPay, ShopeePay',
-    icon: Wallet,
-    tag: 'Popular',
-    tagColor: 'bg-orange-500/10 text-orange-600',
-  },
-  {
     id: 'xendit',
     name: 'Xendit',
-    description: 'Bank Transfer & E-Wallets',
+    description: 'Bank Transfer, QRIS & E-Wallets',
     icon: Zap,
     tag: 'Fast',
     tagColor: 'bg-green-500/10 text-green-600',
