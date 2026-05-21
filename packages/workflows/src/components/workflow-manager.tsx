@@ -174,7 +174,7 @@ export function WorkflowManager({ workflows: initialWorkflows, workspaceId }: Wo
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm">{wf.name}</h4>
-                  <p className="text-[10px] text-muted-foreground">{wf.runs} runs • Created: {new Date(wf.createdAt).toLocaleDateString()}</p>
+                  <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>{wf.runs} runs • Created: {new Date(wf.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">

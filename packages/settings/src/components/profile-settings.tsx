@@ -16,18 +16,35 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>
 
-export function ProfileSettings() {
+interface ProfileSettingsProps {
+  initialData?: {
+    name?: string | null
+    email?: string | null
+    avatarUrl?: string | null
+  }
+}
+
+export function ProfileSettings({ initialData }: ProfileSettingsProps = {}) {
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "John Doe",
-      email: "john@example.com",
+      name: initialData?.name || "John Doe",
+      email: initialData?.email || "john@example.com",
     },
   })
 
   function onSubmit(data: ProfileValues) {
     console.log("Profile updated:", data)
   }
+
+  const initials = initialData?.name
+    ? initialData.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "JD"
 
   return (
     <div className="space-y-6">
@@ -40,8 +57,8 @@ export function ProfileSettings() {
 
       <div className="flex items-center gap-4">
         <Avatar className="h-20 w-20">
-          <AvatarImage src="" />
-          <AvatarFallback>JD</AvatarFallback>
+          <AvatarImage src={initialData?.avatarUrl || undefined} />
+          <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
         <Button variant="outline">Change Avatar</Button>
       </div>

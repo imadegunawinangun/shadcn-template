@@ -1,0 +1,22 @@
+{
+  "extends": "@workspace/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@workspace/landing-page": ["../../packages/landing-page/src/index.ts"],
+      "@workspace/assets": ["../../packages/assets/src/index.ts"],
+      "@workspace/users": ["../../packages/users/src/index.ts"],
+      "@workspace/ui": ["../../packages/ui/src/index.ts"],
+      "@workspace/dashboard": ["../../packages/dashboard/src/index.ts"],
+      "@workspace/database": ["../../packages/database/src/index.ts"],
+      "@workspace/navigation": ["../../packages/navigation/src/index.ts"],
+      "@workspace/auth": ["../../packages/auth/src/index.ts"],
+      "@workspace/ai-assistant": ["../../packages/ai-assistant/src/index.ts"],
+      "@workspace/settings": ["../../packages/settings/src/index.ts"],
+      "@workspace/webmcp": ["../../packages/webmcp/src/index.ts"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

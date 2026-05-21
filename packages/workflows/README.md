@@ -1,66 +1,77 @@
-# @workspace/workflows
+# Workflows Feature (@workspace/workflows)
 
-Modul inti untuk orkestrasi otomasi visual menggunakan sistem berbasis node (Visual Canvas).
+Modul inti untuk orkestrasi otomasi visual menggunakan sistem berbasis node (Visual Canvas) untuk membangun alur kerja tanpa kode.
 
-## 📝 5W1H (Analisis Strategis)
-*   **What**: Platform otomasi visual yang memungkinkan pembuatan alur kerja (workflow) tanpa kode (No-Code).
-*   **Why**: Mengurangi ketergantungan pada tim engineering untuk logika bisnis yang sering berubah dan memberikan fleksibilitas operasional.
-*   **Who**: Digunakan oleh **Admin/Operasional** untuk membuat flow, dikembangkan oleh **Developer** untuk menambah integrasi (Pieces).
-*   **Where**: Terintegrasi di dalam Dashboard Admin pada bagian Automation.
-*   **When**: Digunakan saat sistem butuh melakukan serangkaian aksi otomatis berdasarkan pemicu (trigger) tertentu.
-*   **How**: Menggunakan React Flow untuk interface visual dan engine server-side untuk eksekusi logika.
+## 5W1H
 
-## 🚀 Cara Penggunaan
-1.  Akses antarmuka **Workflow Manager** pada aplikasi Anda.
-2.  Klik **"Create Flow"** untuk menginisialisasi alur kerja baru dan membuka **Visual Canvas**.
-3.  Gunakan **Visual Canvas** untuk menyusun logika:
-    *   Klik ikon **Plus (+)** untuk menambah Node baru (Trigger atau Action).
-    *   Tarik garis antar node untuk menentukan urutan eksekusi.
-    *   Konfigurasikan detail setiap node pada panel yang tersedia.
-4.  Klik **"Save"** untuk mematangkan alur kerja ke sistem.
-5.  Gunakan switch **"Active/Pause"** untuk mengontrol eksekusi alur kerja secara real-time.
-
-## 📦 Implementasi pada Aplikasi Baru
-Jika Anda membuat aplikasi baru (misal: `apps/mobile-admin`) dan ingin menggunakan fitur ini:
-
-1.  **Instalasi Dependensi**:
-    Tambahkan ke `package.json` aplikasi Anda:
-    ```json
-    "dependencies": {
-      "@workspace/workflows": "workspace:*"
-    }
-    ```
-2.  **Impor Komponen**:
-    Di halaman (page) Anda, panggil manajer workflow:
-    ```tsx
-    import { WorkflowManager } from "@workspace/workflows"
-    import { getWorkflows } from "@workspace/workflows/actions"
-
-    export default async function Page() {
-      const workflows = await getWorkflows(workspaceId);
-      return <WorkflowManager workflows={workflows} workspaceId={workspaceId} />
-    }
-    ```
-3.  **Environment Variables**: Pastikan aplikasi baru tersebut memiliki akses ke `DATABASE_URL`.
-
-## 🛠️ Informasi Teknis (Developer)
-*   **Teknologi**: React Flow, Drizzle ORM, Next.js Server Actions.
-*   **Struktur Data**: Nodes dan Edges disimpan dalam kolom JSONB `flow` pada tabel `workflow`.
-*   **Engine**: Logika eksekusi berada di `src/lib/engine.ts`, yang menjalankan fungsi `run()` dari setiap Piece secara sekuensial.
-
-### Cara Menambah Fitur Baru (Pieces)
-1.  Buat file baru di `src/pieces/[nama-integrasi].ts`.
-2.  Definisikan skema input (props) dan fungsi `run()`.
-3.  Daftarkan piece tersebut di `src/pieces/registry.ts`.
-4.  Piece akan muncul secara otomatis di menu "Add Node" pada canvas.
-
-## 👥 Panduan Stakeholder
-*   **User**: Gunakan canvas untuk menyusun logika bisnis Anda tanpa menulis kode. Pastikan setiap node terhubung dengan benar.
-*   **Owner**: Fitur ini meningkatkan efisiensi operasional hingga 80% dengan mengotomatiskan tugas repetitif.
-*   **Developer**: Pastikan setiap Piece baru memiliki *error handling* yang kuat agar tidak menghentikan seluruh antrean workflow.
+| Aspek | Deskripsi |
+| :--- | :--- |
+| **Who** (Siapa) | Admin Operasional, Manajer Bisnis, dan Pengembang. |
+| **What** (Apa) | Platform otomasi visual (No-Code) yang memungkinkan penyusunan alur kerja otomatis menggunakan sistem node dan garis (canvas). |
+| **Where** (Dimana) | Terintegrasi di dalam dashboard pada bagian **Automation** atau **Workflows**. |
+| **When** (Kapan) | Digunakan saat ingin mengotomatiskan tugas repetitif atau logika bisnis yang sering berubah-ubah. |
+| **Why** (Mengapa) | Meningkatkan efisiensi operasional dan fleksibilitas sistem tanpa perlu melakukan perubahan kode sumber. |
+| **How** (Bagaimana) | Menggunakan engine eksekusi sekuensial yang menjalankan blok-blok aksi (Pieces) berdasarkan pemicu (Trigger) tertentu. |
 
 ---
 
-## 🏗️ Status Pengembangan: PAUSED
-*   **Kondisi Terakhir**: Visual editor stabil, integrasi database (Drizzle) siap, Demo Mode aktif.
-*   **Rencana Mendatang**: Implementasi If/Else Logic dan Data Mapping.
+## Cara Menggunakan di Aplikasi Baru
+
+### 1. Tambahkan Dependensi
+Daftarkan paket di `package.json` aplikasi Anda:
+
+```json
+{
+  "dependencies": {
+    "@workspace/workflows": "workspace:*"
+  }
+}
+```
+
+### 2. Implementasi Workflow Manager
+Tampilkan daftar workflow di halaman dashboard:
+
+```tsx
+import { WorkflowManager } from "@workspace/workflows"
+import { getWorkflows } from "@workspace/workflows/actions"
+
+export default async function AutomationPage({ params }) {
+  const workflows = await getWorkflows(params.workspaceId)
+  
+  return (
+    <div className="container py-10">
+      <h1 className="text-2xl font-bold mb-6">Otomasi Alur Kerja</h1>
+      <WorkflowManager 
+        workflows={workflows} 
+        workspaceId={params.workspaceId} 
+      />
+    </div>
+  )
+}
+```
+
+---
+
+## Integrasi Monorepo
+
+Paket `@workspace/workflows` beroperasi sebagai pusat logika otomasi:
+
+- **`@workspace/database`**: Menyimpan struktur node, edge, dan konfigurasi alur kerja dalam tabel `workflow`.
+- **`@workspace/ui`**: Menggunakan komponen UI seperti `Button`, `Dialog`, `Input`, `Card`, dan `Switch` untuk editor dan manager.
+- **`apps/web`**: Aplikasi utama yang menjalankan engine eksekusi (`engine.ts`) dan menyediakan antarmuka visual berbasis React Flow.
+
+---
+
+## Contoh Kasus Penggunaan
+
+1.  **Welcome Automation**:
+    Membuat alur kerja yang secara otomatis mengirimkan email tutorial dan kupon diskon 10% segera setelah pengguna baru mendaftar di platform.
+
+2.  **Low Stock Notification**:
+    Otomatis mengirimkan pesan WhatsApp ke manajer pengadaan ketika sistem mendeteksi stok barang di gudang kurang dari 10 unit.
+
+3.  **Payment Overdue Reminder**:
+    Menjalankan alur kerja yang memeriksa invoice yang belum dibayar setiap hari dan mengirimkan pengingat bertahap pada hari ke-3, ke-7, dan ke-14 setelah jatuh tempo.
+
+---
+*Dibuat untuk ekosistem Web SLO.*

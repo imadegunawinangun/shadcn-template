@@ -6,6 +6,7 @@ import { DashboardLayout, DashboardHeader, DashboardShell } from "@workspace/das
 import { WorkflowManager, ExecutionLogViewer } from "@workspace/workflows"
 import { WebhookManager } from "@workspace/webhooks"
 import { ApiKeyManager } from "@workspace/api-keys"
+import { ModelProviderForm } from "@workspace/settings"
 
 // Server Actions (Imported directly from /actions which is "use server" and safe for client RPC)
 import { getWorkflows, getWorkflowLogs } from "@workspace/workflows/actions"
@@ -16,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/componen
 import { navSections, currentUser } from "@/lib/navigation"
 import { useEffect, useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Info, History } from "lucide-react"
+import { Info, History, Cpu } from "lucide-react"
 
 export default function AutomationPage() {
   const workspaceId = "default-workspace" 
@@ -113,6 +114,10 @@ export default function AutomationPage() {
             <TabsTrigger value="workflows">Workflows</TabsTrigger>
             <TabsTrigger value="api">API Keys</TabsTrigger>
             <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Cpu className="h-4 w-4" />
+              AI Engine
+            </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <History className="h-4 w-4" />
               History
@@ -131,6 +136,10 @@ export default function AutomationPage() {
             <WebhookManager webhooks={webhooks} workspaceId={workspaceId} deliveries={deliveries} />
           </TabsContent>
 
+          <TabsContent value="ai" className="space-y-4">
+            <ModelProviderForm workspaceId={workspaceId} showCardHeader={true} className="max-w-4xl" />
+          </TabsContent>
+
           <TabsContent value="history">
             <ExecutionLogViewer logs={executionLogs} />
           </TabsContent>
@@ -139,3 +148,4 @@ export default function AutomationPage() {
     </DashboardLayout>
   )
 }
+

@@ -407,7 +407,7 @@ export function MemberList({ members, isAdmin, availableApps, onInvite, onAction
                         .filter(([_, role]) => role)
                         .map(([appId, role]) => (
                           <Badge key={appId} variant="outline" className="text-[9px] px-1 py-0 h-4 border-primary/20 text-primary bg-primary/5 shrink-0">
-                            {appId[0].toUpperCase()}: {role}
+                            {appId.charAt(0).toUpperCase()}: {role}
                           </Badge>
                         ))}
                     </div>

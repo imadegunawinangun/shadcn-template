@@ -1,0 +1,19 @@
+{
+  "extends": "@workspace/typescript-config/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "paths": {
+      "@workspace/ui/*": ["../ui/src/*"],
+      "@workspace/marketing": ["../marketing/src/index.ts"],
+      "@workspace/assets": ["../assets/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

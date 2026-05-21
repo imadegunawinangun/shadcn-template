@@ -12,6 +12,7 @@ import {
   updateMemberAppRoles,
   updateWorkspace,
   deleteWorkspace,
+  updateSiteConfig,
   TeamMember 
 } from "@workspace/database"
 import { Loader2 } from "lucide-react"
@@ -26,9 +27,10 @@ interface TeamClientProps {
   }
   currentUserId: string
   isAdmin: boolean
+  fallbackTheme?: any
 }
 
-export function TeamClient({ initialMembers, initialWorkspace, currentUserId, isAdmin }: TeamClientProps) {
+export function TeamClient({ initialMembers, initialWorkspace, currentUserId, isAdmin, fallbackTheme }: TeamClientProps) {
   const [members, setMembers] = useState<TeamMember[]>(initialMembers)
   const [workspace, setWorkspace] = useState(initialWorkspace)
   const [isPending, startTransition] = useTransition()
@@ -116,6 +118,9 @@ export function TeamClient({ initialMembers, initialWorkspace, currentUserId, is
           <TabsContent value="settings" className="space-y-4 outline-none animate-in fade-in-50 duration-500">
             <WorkspaceSettings 
               defaultValues={workspace} 
+              isAdmin={isAdmin}
+              workspaceId={workspace.id}
+              fallbackTheme={fallbackTheme}
               renderMediaLibrary={({ onSelect }) => (
                 <ImageKitMediaLibrary 
                   publicKey={process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || ''}
@@ -134,6 +139,17 @@ export function TeamClient({ initialMembers, initialWorkspace, currentUserId, is
                   }
                 })
               }} 
+              onResetBranding={async () => {
+                startTransition(async () => {
+                  const result = await updateSiteConfig(workspace.id, { theme: null })
+                  if (result.success) {
+                    toast.success("Workspace branding reset. Following Global Site settings.")
+                    window.location.reload()
+                  } else {
+                    toast.error("Failed to reset branding")
+                  }
+                })
+              }}
               onDelete={async () => {
                 startTransition(async () => {
                   const result = await deleteWorkspace(workspace.id)

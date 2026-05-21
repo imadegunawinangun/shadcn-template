@@ -1,3 +1,14 @@
-export * from "./components/hero"
-export * from "./components/features"
-export * from "./components/pricing"
+export { Hero } from "./components/hero";
+export { Features } from "./components/features";
+export { Pricing } from "./components/pricing";
+export { Team } from "./components/team";
+export { GallerySection } from "./components/gallery";
+export { TrustBar } from "./components/trust-bar";
+export { Testimonials } from "./components/testimonials";
+export { Stats } from "./components/stats";
+export { FAQ } from "./components/faq";
+export { CTA } from "./components/cta";
+export { Process } from "./components/process";
+export { Comparison } from "./components/comparison";
+export { Contact } from "./components/contact";
+export * from "./types";

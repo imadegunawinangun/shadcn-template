@@ -149,6 +149,27 @@ Template ini menggunakan arsitektur multi-tenant dua level untuk fleksibilitas m
 - **Implementation**: Hanya aktif pada aplikasi yang membutuhkan (contoh: POS yang memiliki banyak cabang).
 - **Flexibility**: Satu organisasi bisa memiliki banyak entitas dengan tipe yang berbeda-beda (`store`, `warehouse`, dll).
 
+### 🔐 Hierarki Role & Access Control (RBAC)
+
+Sistem menggunakan RBAC 2 Tingkat (Global & App-Specific) agar sangat fleksibel untuk organisasi Enterprise:
+
+#### 1. Global Workspace Role (Tingkat Perusahaan)
+Berlaku lintas aplikasi dan mengontrol hak akses fundamental terhadap workspace itu sendiri (diatur di tabel `membership`).
+- **`owner`**: Kendali absolut (Penagihan, Hapus Workspace, Integrasi Utama).
+- **`admin`**: Manajemen operasional (Undang user, ganti nama workspace).
+- **`member`**: Anggota tim standar (Butuh App Role untuk melakukan tugas spesifik).
+- **`viewer`**: Pengamat (*read-only* murni).
+
+#### 2. App-Specific Role (Tingkat Aplikasi)
+Menentukan apa yang bisa dilakukan user di dalam aplikasi tertentu (diatur di tabel `workspaceAppRole`). Seseorang bisa menjadi sekadar `member` di Workspace, tapi menjadi `store_manager` di aplikasi POS.
+
+**Contoh Kasus: Aplikasi Website Builder (template-web)**
+Untuk aplikasi pembuat website/landing page ini, peran yang disederhanakan dan lebih praktis adalah:
+- **`admin`**: Kendali penuh atas seluruh website (Desain, Pengaturan SEO, Pengaturan Tema/Global, dan Integrasi).
+- **`writer`**: Fokus pada penciptaan dan optimalisasi konten (Menulis Blog, menyusun Landing Page, mengatur SEO, menjalankan AI Smart Writer, dan mengatur Tema Level 3 spesifik aplikasi). Tidak punya akses ke pengaturan tema global Level 1/2 atau penagihan perusahaan.
+
+Di dalam *App Role* tersebut juga terdapat lapisan **Granular Permissions** (contoh: `{"can_publish": false, "can_draft": true}`) yang bisa disesuaikan secara dinamis oleh Admin.
+
 ---
 
 ## 📈 Scaling Strategy

@@ -73,7 +73,7 @@ export function AppearanceSettings({ workspaceId }: { workspaceId?: string }) {
             </TabsList>
           </Tabs>
         </div>
-        <ThemeCustomizer workspaceId={activeId} />
+        <ThemeCustomizer workspaceId={activeId || ""} />
       </div>
     </div>
   )

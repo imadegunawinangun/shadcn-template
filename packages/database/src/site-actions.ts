@@ -2,20 +2,25 @@
 
 import { db } from "./index";
 import { siteConfig } from "./schema";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 /**
- * Mengambil konfigurasi situs untuk workspace tertentu dari database
+ * Mengambil konfigurasi situs untuk workspace dan aplikasi tertentu
  */
-export async function getSiteConfig(workspaceId: string) {
+export async function getSiteConfig(workspaceId: string, appId?: string | null) {
   if (!db) return null;
   
   try {
     const results = await db
       .select()
       .from(siteConfig)
-      .where(eq(siteConfig.workspaceId, workspaceId))
+      .where(
+        and(
+          eq(siteConfig.workspaceId, workspaceId),
+          appId ? eq(siteConfig.appId, appId) : isNull(siteConfig.appId)
+        )
+      )
       .limit(1);
       
     return results[0] || null;
@@ -26,7 +31,7 @@ export async function getSiteConfig(workspaceId: string) {
 }
 
 /**
- * Memperbarui konfigurasi situs untuk workspace tertentu (termasuk tema)
+ * Memperbarui konfigurasi situs (termasuk tema)
  */
 export async function updateSiteConfig(workspaceId: string, data: {
   theme?: any;
@@ -35,12 +40,16 @@ export async function updateSiteConfig(workspaceId: string, data: {
   imagekitPublicKey?: string;
   imagekitPrivateKey?: string;
   imagekitUrlEndpoint?: string;
-}) {
+  aiProvider?: string;
+  aiApiKey?: string;
+  aiBaseUrl?: string;
+  aiModelId?: string;
+  landingPage?: any;
+}, appId?: string | null) {
   if (!db) return { success: false, error: "Database not connected" };
 
   try {
-    // Cek apakah config sudah ada
-    const existing = await getSiteConfig(workspaceId);
+    const existing = await getSiteConfig(workspaceId, appId);
 
     if (existing) {
       await db
@@ -49,13 +58,18 @@ export async function updateSiteConfig(workspaceId: string, data: {
           ...data,
           updatedAt: new Date(),
         })
-        .where(eq(siteConfig.workspaceId, workspaceId));
+        .where(
+          and(
+            eq(siteConfig.workspaceId, workspaceId),
+            appId ? eq(siteConfig.appId, appId) : isNull(siteConfig.appId)
+          )
+        );
     } else {
-      // Jika belum ada, buat baru (biasanya dilakukan saat pembuatan workspace)
       const crypto = await import("crypto");
       await db.insert(siteConfig).values({
         id: crypto.randomUUID(),
         workspaceId,
+        appId: appId || null,
         ...data,
       });
     }

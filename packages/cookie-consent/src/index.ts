@@ -1,3 +1,5 @@
+"use client";
+
 export * from "./components/cookie-consent";
 
 import { useEffect, useState } from "react";

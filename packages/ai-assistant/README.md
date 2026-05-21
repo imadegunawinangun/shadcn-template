@@ -1,6 +1,16 @@
-# @workspace/ai-assistant
-
 Package ini menyediakan komponen Asisten AI yang dapat melayang (floating) dan interaktif untuk aplikasi web.
+
+## 5W1H
+
+| Aspek | Deskripsi |
+| :--- | :--- |
+| **Who** (Siapa) | Pengguna aplikasi yang membutuhkan bantuan cepat, ringkasan data, atau panduan fitur. |
+| **What** (Apa) | Widget asisten AI interaktif yang terintegrasi dengan berbagai LLM (Large Language Models). |
+| **Where** (Dimana) | Diletakkan sebagai komponen melayang (floating widget) di pojok layar atau panel chat di dashboard. |
+| **When** (Kapan) | Digunakan saat pengguna memiliki pertanyaan kontekstual, butuh bantuan navigasi, atau pengolahan data instan. |
+| **Why** (Mengapa) | Mengurangi beban support manual dan meningkatkan efisiensi pengguna dengan memberikan jawaban real-time 24/7. |
+| **How** (Bagaimana) | Berkomunikasi dengan AI providers melalui streaming API dan merendernya dengan UI yang halus (Framer Motion). |
+
 
 ## Fitur
 
@@ -54,6 +64,17 @@ export function MyPage() {
 | `modelId` | `string` | `-` | ID Model spesifik (misal: `gpt-4o-mini`). |
 | `baseUrl` | `string` | `-` | URL API kustom jika menggunakan proxy/custom provider. |
 | `initialMessage` | `string` | `"Halo! Saya asisten AI..."` | Pesan pertama yang ditampilkan saat chat dibuka. |
+
+## Contoh Kasus Penggunaan
+
+1.  **Onboarding Helper**:
+    Membantu pengguna baru memahami fitur-fitur kompleks dengan menjawab pertanyaan seperti "Di mana saya bisa mengatur metode pembayaran?".
+
+2.  **Smart Data Analyst**:
+    Membantu administrator meringkas laporan penjualan atau statistik mingguan menjadi poin-poin yang mudah dipahami.
+
+3.  **Natural Language Action**:
+    Memungkinkan pengguna melakukan perintah lewat chat, misalnya "Tampilkan semua pesanan dari minggu lalu" dan asisten akan mengarahkan atau memfilter data tersebut.
 
 ## Integrasi Monorepo
 

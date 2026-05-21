@@ -1,10 +1,11 @@
 "use server"
 
 import { db } from "./index";
-import { membership, user, workspace, entity, workspaceAppRole } from "./schema";
+import { membership, user, workspace, entity, workspaceAppRole, siteConfig } from "./schema";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { clerkClient } from "@clerk/nextjs/server";
+import { getSiteConfig } from "./site-actions";
 
 export type TeamMember = {
   id: string;
@@ -43,11 +44,14 @@ export async function getTeamMembers(workspaceId: string): Promise<TeamMember[]>
 
     // Map app roles by userId
     const appRolesByUser: Record<string, Record<string, string>> = {};
-    appRolesData.forEach((ar) => {
+    appRolesData.forEach((ar: any) => {
       if (!appRolesByUser[ar.userId]) {
         appRolesByUser[ar.userId] = {};
       }
-      appRolesByUser[ar.userId][ar.appId] = ar.roleName;
+      const userRoles = appRolesByUser[ar.userId];
+      if (userRoles) {
+        userRoles[ar.appId] = ar.roleName;
+      }
     });
 
     const formattedMembers: TeamMember[] = members.map((m: any) => ({
@@ -396,7 +400,7 @@ export async function updateMemberAppRoles(workspaceId: string, userId: string, 
   
   try {
     // Perform updates in a transaction for the new workspaceAppRole table
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       for (const [appId, roleName] of Object.entries(appRoles)) {
         if (!roleName) {
           // If role is empty/none, delete the access
@@ -405,7 +409,7 @@ export async function updateMemberAppRoles(workspaceId: string, userId: string, 
               and(
                 eq(workspaceAppRole.workspaceId, workspaceId),
                 eq(workspaceAppRole.userId, userId),
-                eq(workspaceAppRole.appId, appId)
+                eq(workspaceAppRole.appId, appId as any)
               )
             );
           continue;
@@ -416,7 +420,7 @@ export async function updateMemberAppRoles(workspaceId: string, userId: string, 
           .values({
             workspaceId,
             userId,
-            appId,
+            appId: appId as any,
             roleName,
             updatedAt: new Date(),
           })
@@ -441,64 +445,56 @@ export async function updateMemberAppRoles(workspaceId: string, userId: string, 
 /**
  * Updates workspace settings and syncs with Clerk
  */
-export async function updateWorkspace(workspaceId: string, data: { name?: string, slug?: string, image?: string }) {
-  if (!db) return { success: false };
+export async function updateWorkspace(workspaceId: string, data: { name?: string, slug?: string, image?: string, primaryColor?: string | null }) {
+  if (!db) return { success: false, error: "Database not connected" };
   
   try {
     // 1. Update Clerk Organization if possible
     try {
-      const client = await clerkClient();
-      console.log(`Syncing with Clerk: ID=${workspaceId}, Name=${data.name}`);
-      
-      const updatePayload: any = { name: data.name };
-      if (data.slug) updatePayload.slug = data.slug;
-      
-      // Note: Updating Logo in Clerk usually requires a file upload. 
-      // If we only have a URL from our storage (like ImageKit), 
-      // we primarily store it in our database.
-      
-      try {
-        await client.organizations.updateOrganization(workspaceId, updatePayload);
+      if (data.name || data.slug) {
+        const client = await clerkClient();
+        console.log(`Syncing with Clerk: ID=${workspaceId}, Name=${data.name}`);
         
-        // 1.2 Update Logo in Clerk if image URL is provided
-        if (data.image) {
-          console.log("Syncing logo with Clerk...");
-          try {
-            const response = await fetch(data.image);
-            if (response.ok) {
-              const blob = await response.blob();
-              const file = new File([blob], "logo.png", { type: blob.type || 'image/png' });
-              
-              await client.organizations.updateOrganizationLogo(workspaceId, {
-                file: file
-              });
-              console.log("Clerk logo sync successful");
-            }
-          } catch (logoError) {
-            console.error("Failed to sync logo with Clerk:", logoError);
-            // We don't fail the whole operation if only the logo sync fails
+        const updatePayload: any = { name: data.name };
+        if (data.slug) updatePayload.slug = data.slug;
+        
+        try {
+          await client.organizations.updateOrganization(workspaceId, updatePayload);
+        } catch (clerkError: any) {
+          if (clerkError.message?.toLowerCase().includes("slug")) {
+            console.warn("Clerk Slugs not enabled, updating name only");
+            await client.organizations.updateOrganization(workspaceId, { name: data.name });
+          } else {
+            throw clerkError;
           }
         }
-      } catch (clerkError: any) {
-        // Fallback: If slugs are disabled in Clerk dashboard, try updating name only
-        if (clerkError.message?.toLowerCase().includes("slug")) {
-          console.warn("Clerk Slugs not enabled, updating name only");
-          await client.organizations.updateOrganization(workspaceId, { name: data.name });
-        } else {
-          throw clerkError;
+      }
+
+      // Sync logo with Clerk if image URL is provided
+      if (data.image) {
+        const client = await clerkClient();
+        console.log("Syncing logo with Clerk...");
+        try {
+          const response = await fetch(data.image);
+          if (response.ok) {
+            const blob = await response.blob();
+            const file = new File([blob], "logo.png", { type: blob.type || 'image/png' });
+            
+            await client.organizations.updateOrganizationLogo(workspaceId, {
+              file: file
+            });
+            console.log("Clerk logo sync successful");
+          }
+        } catch (logoError) {
+          console.error("Failed to sync logo with Clerk:", logoError);
         }
       }
-      
-      console.log("Clerk sync successful");
     } catch (clerkError: any) {
       console.error("Clerk Sync Error:", clerkError);
-      return { 
-        success: false, 
-        error: clerkError.errors?.[0]?.message || clerkError.message || "Failed to sync with Clerk" 
-      };
+      // We continue to update local DB even if Clerk sync fails
     }
 
-    // 2. Update local database
+    // 2. Update local database (workspace table)
     await db.update(workspace)
       .set({ 
         name: data.name,
@@ -507,8 +503,27 @@ export async function updateWorkspace(workspaceId: string, data: { name?: string
         updatedAt: new Date()
       })
       .where(eq(workspace.id, workspaceId));
+
+    // 3. Update siteConfig for the color
+    if (data.primaryColor !== undefined) {
+      const config = await getSiteConfig(workspaceId);
+      const theme = (config?.theme as any) || {};
       
-    revalidatePath("/dashboard/team");
+      await db.insert(siteConfig).values({
+        id: Math.random().toString(36).substr(2, 9),
+        workspaceId,
+        theme: { ...theme, customColor: data.primaryColor },
+      }).onConflictDoUpdate({
+        target: siteConfig.workspaceId,
+        set: {
+          theme: { ...theme, customColor: data.primaryColor },
+          updatedAt: new Date(),
+        }
+      });
+    }
+      
+    revalidatePath("/dashboard/workspace");
+    revalidatePath("/dashboard/website");
     return { success: true };
   } catch (error) {
     console.error("Failed to update workspace:", error);

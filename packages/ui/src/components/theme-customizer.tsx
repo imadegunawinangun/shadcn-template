@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, Settings2, RotateCcw, Unlock, Lock, Palette, Pipette, Type } from "lucide-react"
+import { Check, Settings2, RotateCcw, Unlock, Lock, Palette, Pipette, Type, Copy, Download, Upload, ClipboardCheck, Terminal } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@workspace/ui/components/button"
@@ -26,10 +26,11 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { Input } from "@workspace/ui/components/input"
+import { Badge } from "@workspace/ui/components/badge"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
 import { toast } from "sonner"
-import { updateSiteConfig } from "@workspace/database"
+import { updateSiteConfig, getSiteConfig } from "@workspace/database"
 import { Loader2 } from "lucide-react"
 
 const STYLES = ["Vega", "Nova", "Maia", "Lyra", "Mira", "Luma", "Sera"]
@@ -87,56 +88,133 @@ const RADIUS_OPTIONS = [
   { name: "Full", value: "9999" },
 ]
 
-export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspaceId?: string }) {
+export interface ThemeCustomizerProps {
+  workspaceId: string
+  appId?: string | null
+  fallbackConfig?: any
+  initialConfig?: any
+  onSave?: (config: any) => Promise<{ success: boolean; error?: string }>
+  onChange?: (config: any) => void
+  trigger?: React.ReactNode
+  previewOnly?: boolean
+}
+
+export function ThemeCustomizer({ workspaceId, appId = null, fallbackConfig, initialConfig, onSave, onChange, trigger, previewOnly = false }: ThemeCustomizerProps) {
   const { theme: mode, setTheme: setMode } = useTheme()
-  const [config, setConfig] = React.useState({
+  const [config, setConfig] = useLocalStorage<any>(`theme-config-${workspaceId}${appId ? `-${appId}` : ""}`, {
     style: "Nova",
     baseColor: "Zinc",
-    color: "Blue",
-    customColor: "#3b82f6",
-    chartColor: "Blue",
-    customChartColor: "#3b82f6",
+    color: "Slate",
+    customColor: "#64748b",
+    chartColor: "Auto",
+    customChartColor: "#64748b",
     fontHeading: "Inter",
     fontBody: "Roboto",
     radius: "0.5",
+    secondaryColor: "Slate",
+    customSecondaryColor: "#64748b",
     menu: "Default",
     menuAppearance: "Solid",
     menuAccent: "Subtle",
   })
   const [locked, setLocked] = React.useState<Record<string, boolean>>({})
+  const [mounted, setMounted] = React.useState(false)
+  const [isResetting, setIsResetting] = React.useState(false)
+  const [isOpen, setIsOpen] = React.useState(false)
+  const originalConfigRef = React.useRef<any>(null)
 
-  // Load from localStorage on mount
+  const SYSTEM_DEFAULT = {
+    style: "Nova",
+    baseColor: "Zinc",
+    color: "Slate",
+    customColor: "#64748b",
+    chartColor: "Auto",
+    customChartColor: "#64748b",
+    fontHeading: "Inter",
+    fontBody: "Roboto",
+    radius: "0.5",
+    secondaryColor: "Slate",
+    customSecondaryColor: "#64748b",
+    menu: "Default",
+    menuAppearance: "Solid",
+    menuAccent: "Subtle",
+  }
+
+  // Load from database and localStorage on mount
   React.useEffect(() => {
-    const savedConfig = localStorage.getItem("theme-config")
-    if (savedConfig) {
+    const init = async () => {
       try {
-        setConfig(JSON.parse(savedConfig))
+        // If initialConfig is provided, use it and skip DB fetch
+        if (initialConfig) {
+          setConfig(initialConfig)
+          setMounted(true)
+          return
+        }
+
+        // 1. Try to fetch from database for this specific workspace/app
+        const dbConfig = await getSiteConfig(workspaceId, appId)
+        if (dbConfig?.theme) {
+          setConfig(dbConfig.theme as any)
+          setMounted(true)
+          return
+        }
+
+        // 2. If no DB config, check fallbackConfig (Inherited)
+        if (fallbackConfig) {
+          setConfig(fallbackConfig)
+          setMounted(true)
+          return
+        }
+
+        // 3. Fallback to localStorage if available (for unsaved tweaks)
+        const storageKey = `theme-config-${workspaceId}${appId ? `-${appId}` : ""}`
+        const savedConfig = localStorage.getItem(storageKey)
+        if (savedConfig) {
+          setConfig(JSON.parse(savedConfig))
+        }
       } catch (e) {
-        console.error("Failed to load theme config", e)
+        console.error("Failed to load initial theme config", e)
+      } finally {
+        setMounted(true)
       }
     }
-  }, [])
+
+    init()
+  }, [workspaceId, appId, fallbackConfig])
 
   // Apply config to document and save to localStorage
   React.useEffect(() => {
+    if (previewOnly) {
+      return
+    }
     const root = window.document.documentElement
-    root.setAttribute("data-style", config.style.toLowerCase())
-    root.setAttribute("data-base-color", config.baseColor.toLowerCase())
-    root.setAttribute("data-theme", config.color === "Custom" ? "custom" : config.color.toLowerCase())
-    root.setAttribute("data-chart-color", config.chartColor === "Custom" ? "custom" : config.chartColor.toLowerCase())
-    root.setAttribute("data-font-heading", config.fontHeading.toLowerCase())
-    root.setAttribute("data-font-body", config.fontBody.toLowerCase())
-    root.setAttribute("data-radius", config.radius)
-    root.setAttribute("data-menu", config.menu.toLowerCase())
-    root.setAttribute("data-menu-appearance", config.menuAppearance.toLowerCase())
-    root.setAttribute("data-menu-accent", config.menuAccent.toLowerCase())
+    root.setAttribute("data-style", (config.style || "Nova").toLowerCase())
+    root.setAttribute("data-base-color", (config.baseColor || "Zinc").toLowerCase())
+    root.setAttribute("data-theme", (config.color || "Slate") === "Custom" ? "custom" : (config.color || "Slate").toLowerCase())
+    root.setAttribute("data-secondary-theme", (config.secondaryColor || "Slate") === "Custom" ? "custom" : (config.secondaryColor || "Slate").toLowerCase())
+    root.setAttribute("data-chart-color", (config.chartColor || "Auto") === "Custom" ? "custom" : (config.chartColor || "Auto").toLowerCase())
+    root.setAttribute("data-font-heading", (config.fontHeading || "Inter").toLowerCase())
+    root.setAttribute("data-font-body", (config.fontBody || "Roboto").toLowerCase())
+    root.setAttribute("data-radius", config.radius || "0.5")
+    root.setAttribute("data-menu", (config.menu || "Default").toLowerCase())
+    root.setAttribute("data-menu-appearance", (config.menuAppearance || "Solid").toLowerCase())
+    root.setAttribute("data-menu-accent", (config.menuAccent || "Subtle").toLowerCase())
     
-    root.style.setProperty("--radius", config.radius.includes("rem") ? config.radius : `${config.radius}rem`)
+    root.style.setProperty("--radius", (config.radius || "0.5").includes("rem") ? config.radius : `${config.radius || "0.5"}rem`)
     
     if (config.color === "Custom") {
       root.style.setProperty("--primary", config.customColor)
     } else {
       root.style.removeProperty("--primary")
+    }
+
+    if (config.secondaryColor === "Custom") {
+      root.style.setProperty("--secondary", config.customSecondaryColor)
+      // For foreground, we can use a simple black/white check or just force a contrast
+      // For now let's use primary-foreground if secondary is close to primary, 
+      // or just stay with default. Actually, let's just set the variable.
+    } else {
+      root.style.removeProperty("--secondary")
     }
 
     if (config.chartColor === "Custom") {
@@ -145,17 +223,60 @@ export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspa
       root.style.removeProperty("--chart-1")
     }
     
-    localStorage.setItem("theme-config", JSON.stringify(config))
-  }, [config])
+    localStorage.setItem(`theme-config-${workspaceId}`, JSON.stringify(config))
+  }, [config, workspaceId])
+
+  // Trigger onChange callback to keep visual editor preview in sync
+  React.useEffect(() => {
+    if (onChange && mounted) {
+      onChange(config)
+    }
+  }, [config, onChange, mounted])
+
+  // Track original theme snapshot to revert if the sheet is closed without saving
+  React.useEffect(() => {
+    if (isOpen) {
+      originalConfigRef.current = { ...config }
+    } else if (!isOpen && originalConfigRef.current) {
+      // Revert to original settings when closing the sheet without clicking "Save"
+      setConfig(originalConfigRef.current)
+      originalConfigRef.current = null
+    }
+  }, [isOpen])
 
   const [isSaving, setIsSaving] = React.useState(false)
+  const [jsonValue, setJsonValue] = React.useState("")
+  const [copied, setCopied] = React.useState(false)
+
+  // Update jsonValue whenever config changes
+  React.useEffect(() => {
+    setJsonValue(JSON.stringify(config, null, 2))
+  }, [config])
 
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const result = await updateSiteConfig(workspaceId, { theme: config })
+      if (previewOnly) {
+        originalConfigRef.current = { ...config }
+        setIsOpen(false)
+        toast.success("Theme applied to the page preview! Fill in the fields and click 'Buat Laman' to finish.")
+        return
+      }
+      if (onSave) {
+        const result = await onSave(config)
+        if (result.success) {
+          originalConfigRef.current = { ...config }
+          toast.success("Theme saved successfully!")
+        } else {
+          toast.error("Failed to save theme: " + result.error)
+        }
+        return
+      }
+
+      const result = await updateSiteConfig(workspaceId, { theme: config }, appId)
       if (result.success) {
-        toast.success("Theme saved to database for this workspace! 🚀")
+        originalConfigRef.current = { ...config }
+        toast.success(`Theme saved for this ${appId ? "application" : "workspace"}! 🚀`)
       } else {
         toast.error("Failed to save theme: " + result.error)
       }
@@ -198,14 +319,60 @@ export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspa
         defaults.fontHeading = "IBM Plex Sans"
         defaults.fontBody = "Inter"
       }
-      setConfig((prev) => ({ ...prev, ...defaults }))
+      setConfig((prev: any) => ({ ...prev, ...defaults }))
     } else {
-      setConfig((prev) => ({ ...prev, [key]: value }))
+      setConfig((prev: any) => ({ ...prev, [key]: value }))
     }
   }
 
   const toggleLock = (section: string) => {
     setLocked(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  const handleReset = async () => {
+    if (previewOnly) {
+      if (fallbackConfig) {
+        setConfig(fallbackConfig)
+        toast.success("Tema direset ke setelan Workspace (Level 2).")
+      } else if (initialConfig) {
+        setConfig(initialConfig)
+        toast.success("Tema direset ke preset bawaan template.")
+      } else {
+        setConfig(SYSTEM_DEFAULT)
+        toast.success("Tema direset ke Default Sistem.")
+      }
+      return
+    }
+    if (!confirm("Reset editor ke setelan prioritas di bawahnya? (Tidak langsung menyimpan ke database)")) return
+    
+    setIsResetting(true)
+    try {
+      if (fallbackConfig) {
+        setConfig(fallbackConfig)
+        toast.success(appId ? "Editor direset ke setelan Workspace/Organisasi (Level 1)." : "Editor direset ke setelan prioritas di bawahnya.")
+      } else if (appId) {
+        // If appId is provided but fallbackConfig is empty, it means Level 1 is empty
+        setConfig(SYSTEM_DEFAULT)
+        toast.success("Editor direset ke setelan Workspace/Organisasi (Level 1) yang masih bawaan sistem.")
+      } else if (workspaceId === "platform") {
+        setConfig(SYSTEM_DEFAULT)
+        toast.success("Editor direset ke setelan Default Sistem.")
+      } else {
+        // Fallback fetch jika prop tidak tersedia
+        const globalConfig = await getSiteConfig("platform")
+        if (globalConfig?.theme) {
+          setConfig(globalConfig.theme as any)
+          toast.success("Editor memuat setelan dari Global Site.")
+        } else {
+          setConfig(SYSTEM_DEFAULT)
+          toast.success("Editor direset ke Default Sistem.")
+        }
+      }
+    } catch (error) {
+      toast.error("Gagal melakukan reset.")
+    } finally {
+      setIsResetting(false)
+    }
   }
 
   const shuffle = () => {
@@ -217,6 +384,7 @@ export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspa
     if (!locked["Chart Color"]) newConfig.chartColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]!.name
     if (!locked["Heading Font"]) newConfig.fontHeading = HEADING_FONTS[Math.floor(Math.random() * HEADING_FONTS.length)]!
     if (!locked["Body Font"]) newConfig.fontBody = BODY_FONTS[Math.floor(Math.random() * BODY_FONTS.length)]!
+    if (!locked["Secondary Color"]) newConfig.secondaryColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]!.name
     if (!locked["Radius"]) newConfig.radius = RADIUS_OPTIONS[Math.floor(Math.random() * RADIUS_OPTIONS.length)]!.value
     if (!locked["Menu"]) newConfig.menu = (["Default", "Inverted"][Math.floor(Math.random() * 2)])!
     if (!locked["Menu Appearance"]) newConfig.menuAppearance = (["Solid", "Translucent"][Math.floor(Math.random() * 2)])!
@@ -226,34 +394,64 @@ export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspa
     toast.success("Theme shuffled! 🎲")
   }
 
+  if (!mounted) {
+    return trigger ? (
+      <div className="opacity-50 pointer-events-none">{trigger}</div>
+    ) : (
+      <Button variant="outline" className="w-full h-12 gap-2 border-dashed opacity-50 cursor-not-allowed">
+        <Settings2 className="h-4 w-4" />
+        <span>Loading Customizer...</span>
+      </Button>
+    );
+  }
+
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="w-full h-12 gap-2 border-dashed hover:border-primary hover:text-primary transition-all">
-          <Settings2 className="h-4 w-4" />
-          <span>Customize Brand Colors & Style</span>
-        </Button>
+        {trigger || (
+          <Button variant="outline" className="w-full h-12 gap-2 border-dashed hover:border-primary hover:text-primary transition-all">
+            <Settings2 className="h-4 w-4" />
+            <span>Customize Brand Colors & Style</span>
+          </Button>
+        )}
       </SheetTrigger>
-      <SheetContent side="right" className="w-[350px] p-0 flex flex-col gap-0 border-l shadow-2xl h-screen">
+      <SheetContent side="right" className="w-[350px] p-0 flex flex-col gap-0 border-l shadow-2xl h-screen" hideOverlay={true}>
         <div className="p-6 border-b bg-muted/30">
           <SheetHeader className="mb-4">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl font-bold">Customize</SheetTitle>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => window.location.reload()}>
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-2">
+                {fallbackConfig && JSON.stringify(config) === JSON.stringify(fallbackConfig) && (
+                  <Badge variant="outline" className="bg-primary/5 text-[9px] h-5 border-dashed">Inherited</Badge>
+                )}
+                <div className="flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    onClick={handleReset}
+                    disabled={isResetting}
+                  >
+                    {isResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             </div>
-            <SheetDescription>Replicating shadcn/ui create experience.</SheetDescription>
+            <SheetDescription className="text-[11px]">
+              {fallbackConfig && JSON.stringify(config) === JSON.stringify(fallbackConfig) 
+                ? "Showing inherited styles from a lower priority level." 
+                : "Customizing unique branding for this level."}
+            </SheetDescription>
           </SheetHeader>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1 h-9 gap-2" size="sm" onClick={shuffle}>
+            <Button variant="outline" className="flex-1 h-9 gap-2 text-xs" size="sm" onClick={shuffle}>
               <RotateCcw className="h-3.5 w-3.5" /> Shuffle
             </Button>
-            <Button variant={mode === "dark" ? "default" : "outline"} size="icon" className="h-9 w-9" onClick={() => setMode(mode === "dark" ? "light" : "dark")}>
-               <Palette className="h-4 w-4" />
-            </Button>
+            {!previewOnly && (
+              <Button variant={mode === "dark" ? "default" : "outline"} size="icon" className="h-9 w-9" onClick={() => setMode(mode === "dark" ? "light" : "dark")}>
+                 {mode === "dark" ? <Palette className="h-4 w-4" /> : <Palette className="h-4 w-4 text-muted-foreground" />}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -349,8 +547,74 @@ export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspa
               </div>
             </ConfigSection>
 
+            <ConfigSection title="Secondary Color" value={config.secondaryColor} locked={locked["Secondary Color"]} onToggleLock={() => toggleLock("Secondary Color")}>
+              <div className="grid grid-cols-3 gap-2">
+                {ACCENT_COLORS.map((c) => (
+                  <ConfigButton 
+                    key={c.name} 
+                    label={c.name} 
+                    active={config.secondaryColor === c.name} 
+                    onClick={() => updateConfig("secondaryColor", c.name)} 
+                  >
+                    <span 
+                      className="h-3 w-3 rounded-full mr-2 shrink-0 border border-black/10" 
+                      style={{ backgroundColor: c.color }} 
+                    />
+                  </ConfigButton>
+                ))}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant={config.secondaryColor === "Custom" ? "default" : "outline"} 
+                      size="sm" 
+                      className={cn(
+                        "justify-start font-normal text-[10px] h-8 px-2",
+                        config.secondaryColor === "Custom" && "ring-2 ring-primary ring-offset-1"
+                      )}
+                    >
+                      <Pipette className="h-3 w-3 mr-2" />
+                      Custom
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64">
+                    <div className="space-y-4">
+                      <Label>Pick a custom secondary color</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          type="color" 
+                          value={config.customSecondaryColor} 
+                          onChange={(e) => {
+                            updateConfig("customSecondaryColor", e.target.value)
+                            updateConfig("secondaryColor", "Custom")
+                          }}
+                          className="w-12 h-10 p-1"
+                        />
+                        <Input 
+                          type="text" 
+                          value={config.customSecondaryColor} 
+                          onChange={(e) => {
+                            updateConfig("customSecondaryColor", e.target.value)
+                            updateConfig("secondaryColor", "Custom")
+                          }}
+                          className="flex-1"
+                          placeholder="#000000"
+                        />
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </ConfigSection>
+
             <ConfigSection title="Chart Color" value={config.chartColor} locked={locked["Chart Color"]} onToggleLock={() => toggleLock("Chart Color")}>
               <div className="grid grid-cols-3 gap-2">
+                <ConfigButton 
+                  label="Auto" 
+                  active={config.chartColor === "Auto"} 
+                  onClick={() => updateConfig("chartColor", "Auto")} 
+                >
+                  <RotateCcw className="h-3 w-3 mr-2" />
+                </ConfigButton>
                 {ACCENT_COLORS.map((c) => (
                   <ConfigButton 
                     key={c.name} 
@@ -491,6 +755,54 @@ export function ThemeCustomizer({ workspaceId = "default-workspace" }: { workspa
                 ))}
               </div>
             </ConfigSection>
+
+            <div className="pt-4 border-t space-y-4">
+              <div className="flex items-center gap-2">
+                <Terminal className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Developer Tools (JSONB)</Label>
+              </div>
+              
+              <div className="relative group">
+                <textarea
+                  value={jsonValue}
+                  onChange={(e) => setJsonValue(e.target.value)}
+                  className="w-full h-32 p-3 text-[10px] font-mono bg-muted/50 border rounded-md focus:ring-1 focus:ring-primary focus:outline-none resize-none"
+                  spellCheck={false}
+                />
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      navigator.clipboard.writeText(jsonValue)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    }}
+                    title="Copy to clipboard"
+                  >
+                    {copied ? <ClipboardCheck className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-[10px] gap-2"
+                onClick={() => {
+                  try {
+                    const parsed = JSON.parse(jsonValue)
+                    setConfig(parsed)
+                  } catch (e) {
+                    alert("Invalid JSON format")
+                  }
+                }}
+              >
+                <Upload className="h-3 w-3" />
+                Apply JSON Config
+              </Button>
+            </div>
           </div>
         </div>
         
@@ -552,4 +864,33 @@ function ConfigButton({ label, active, onClick, children }: { label: string; act
       {active && <Check className="ml-auto h-3 w-3 shrink-0" />}
     </Button>
   )
+}
+
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = React.useState<T>(() => {
+    if (typeof window === "undefined") {
+      return initialValue
+    }
+    try {
+      const item = window.localStorage.getItem(key)
+      return item ? JSON.parse(item) : initialValue
+    } catch (error) {
+      console.log(error)
+      return initialValue
+    }
+  })
+
+  const setValue = (value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value
+      setStoredValue(valueToStore)
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore))
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  return [storedValue, setValue] as const
 }

@@ -8,7 +8,7 @@ import { Field, FieldLabel, FieldError } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { TypographyH3, TypographyP } from "@workspace/ui/components/typography"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card"
-import { Globe, Trash2, Save, Image as ImageIcon, Pencil, ImagePlus } from "lucide-react"
+import { Globe, Trash2, Save, Image as ImageIcon, Pencil, ImagePlus, RotateCcw } from "lucide-react"
 import { 
   Dialog, 
   DialogContent, 
@@ -19,11 +19,13 @@ import {
 } from "@workspace/ui/components/dialog"
 import { cn } from "@workspace/ui/lib/utils"
 import { useState } from "react"
+import { ThemeCustomizer } from "@workspace/ui/components/theme-customizer"
 
 const workspaceSchema = z.object({
   name: z.string().min(2, "Workspace name must be at least 2 characters."),
   slug: z.string().min(2, "Slug must be at least 2 characters."),
   image: z.string().optional(),
+  primaryColor: z.string().optional().nullable(),
 })
 
 type WorkspaceValues = z.infer<typeof workspaceSchema>
@@ -37,9 +39,13 @@ interface WorkspaceSettingsProps {
     urlEndpoint: string
   }
   renderMediaLibrary?: (props: { onSelect: (url: string) => void }) => React.ReactNode
+  isAdmin?: boolean
+  workspaceId: string
+  onResetBranding?: () => void
+  fallbackTheme?: any
 }
 
-export function WorkspaceSettings({ defaultValues, onUpdate, onDelete, imageKitConfig, renderMediaLibrary }: WorkspaceSettingsProps) {
+export function WorkspaceSettings({ defaultValues, onUpdate, onDelete, imageKitConfig, renderMediaLibrary, isAdmin, workspaceId, onResetBranding, fallbackTheme }: WorkspaceSettingsProps) {
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false)
   const form = useForm<WorkspaceValues>({
     resolver: zodResolver(workspaceSchema),
@@ -165,6 +171,43 @@ export function WorkspaceSettings({ defaultValues, onUpdate, onDelete, imageKitC
                 </Field>
               )}
             />
+
+            <div className="space-y-4">
+              <FieldLabel>Organization Branding (Level 1)</FieldLabel>
+              <div className="p-4 rounded-lg bg-indigo-500/5 border border-indigo-500/20 text-sm">
+                <p className="font-semibold text-indigo-600 dark:text-indigo-400 mb-1">Branding Priority: Level 1 (Organization)</p>
+                <p className="text-muted-foreground">
+                  Tema ini adalah standar utama untuk **seluruh aplikasi** organisasi Anda. 
+                </p>
+              </div>
+              <TypographyP className="text-[10px] text-muted-foreground -mt-2 mb-2">
+                Identitas visual utama organisasi Anda.
+              </TypographyP>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <ThemeCustomizer 
+                    workspaceId={workspaceId} 
+                    appId={null}
+                    fallbackConfig={fallbackTheme}
+                  />
+                </div>
+                {isAdmin && (
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="h-12 px-4 border-dashed hover:bg-destructive/10 hover:text-destructive hover:border-destructive transition-all"
+                    onClick={() => {
+                      if (confirm("Reset branding workspace ini? Warna akan mengikuti pengaturan Global Site.")) {
+                        onResetBranding?.()
+                      }
+                    }}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardContent>
           <CardFooter className="bg-muted/20 border-t py-3 flex justify-end">
             <Button type="submit" size="sm" className="gap-2 px-4 h-9">

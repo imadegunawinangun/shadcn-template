@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { DashboardLayout, DashboardHeader, DashboardShell } from "@workspace/dashboard"
-import { MediaGallery, ImageKitMediaLibrary } from "@workspace/assets"
+import { ImageKitMediaLibrary } from "@workspace/assets"
 import { currentUser } from "@/lib/navigation"
-import { mockAssets } from "@/lib/mock-data"
-import { uploadToCloudinaryAction, getAvailableProvidersAction } from "./actions"
-import { uploadToImageKitAction, listAssetsImageKitAction, renameAssetImageKitAction } from "./imagekit-actions"
+import { getAvailableProvidersAction } from "./actions"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select"
 import { Badge } from "@workspace/ui/components/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 
 export default function AssetsPage() {
   const [provider, setProvider] = useState<"cloudinary" | "imagekit" | "none">("none")
@@ -17,8 +14,6 @@ export default function AssetsPage() {
     cloudinary: false,
     imagekit: false
   })
-  const [assets, setAssets] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function checkProviders() {
@@ -32,27 +27,6 @@ export default function AssetsPage() {
     checkProviders()
   }, [])
 
-  useEffect(() => {
-    if (provider === "none") return
-    async function loadAssets() {
-      setIsLoading(true)
-      try {
-        if (provider === "imagekit") {
-          const data = await listAssetsImageKitAction()
-          setAssets(data)
-        } else {
-          // Fallback to mock for cloudinary for now, or implement listAssetsCloudinaryAction
-          setAssets(mockAssets)
-        }
-      } catch (error) {
-        console.error("Failed to load assets:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    loadAssets()
-  }, [provider])
-
   return (
     <DashboardLayout 
       user={currentUser}
@@ -64,7 +38,7 @@ export default function AssetsPage() {
           <div className="flex items-center justify-between">
             <DashboardHeader
               heading="Media Library"
-              text="Upload and manage your images, videos, and documents."
+              text="Upload and manage your images, videos, and documents using the official ImageKit Media Library."
             />
             <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-lg border">
               <span className="text-xs font-medium text-muted-foreground ml-2">Storage Provider:</span>
@@ -87,65 +61,20 @@ export default function AssetsPage() {
             </div>
           </div>
 
-          <Tabs defaultValue="gallery" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="gallery">Custom Gallery</TabsTrigger>
-              <TabsTrigger value="imagekit">Official Widget</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="gallery" className="mt-6">
-              {isLoading ? (
-                <div className="flex h-64 items-center justify-center">
-                  <p className="text-sm text-muted-foreground animate-pulse">Loading assets from {provider}...</p>
-                </div>
-              ) : (
-                <MediaGallery 
-                  assets={assets} 
-                  onUpload={async (source, name) => {
-                    if (provider === "imagekit") {
-                      const asset = await uploadToImageKitAction(source, name)
-                      const newData = await listAssetsImageKitAction()
-                      setAssets(newData)
-                      return asset
-                    } else if (provider === "cloudinary") {
-                      const asset = await uploadToCloudinaryAction(source, name)
-                      return asset
-                    }
-                    throw new Error("Upload not supported")
-                  }}
-                  onRename={async (id, newName, oldName) => {
-                    if (provider === "imagekit") {
-                      await renameAssetImageKitAction(id, newName, oldName)
-                      const newData = await listAssetsImageKitAction()
-                      setAssets(newData)
-                    }
-                  }}
-                  onCopy={async (newUrl, originalName) => {
-                    if (provider === "imagekit") {
-                      const asset = await uploadToImageKitAction(newUrl, `edited-${originalName}`)
-                      const newData = await listAssetsImageKitAction()
-                      setAssets(newData)
-                      return asset
-                    }
-                    throw new Error("Copy only supported for ImageKit")
-                  }}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="imagekit" className="mt-6">
-              {provider === "imagekit" ? (
-                <ImageKitMediaLibrary 
-                  publicKey={process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || ''}
-                  urlEndpoint={process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || ''}
-                />
-              ) : (
-                <div className="flex h-64 flex-col items-center justify-center border border-dashed rounded-xl bg-muted/20">
-                  <p className="text-sm text-muted-foreground">ImageKit is not selected as the provider.</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          <div className="w-full bg-card rounded-xl border shadow-sm overflow-hidden animate-in fade-in duration-500">
+            {provider === "imagekit" ? (
+              <ImageKitMediaLibrary 
+                publicKey={process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || ''}
+                urlEndpoint={process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || ''}
+              />
+            ) : (
+              <div className="flex h-64 flex-col items-center justify-center border border-dashed rounded-xl bg-muted/20">
+                <p className="text-sm text-muted-foreground">
+                  {provider === "cloudinary" ? "Cloudinary widget integration is not available in this view." : "No storage provider is currently configured."}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </DashboardShell>
     </DashboardLayout>

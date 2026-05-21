@@ -126,12 +126,149 @@ export const product = pgTable("product", {
 	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
 
-export const siteConfig = pgTable("siteConfig", {
+export const siteConfig = pgTable("site_config", {
 	id: text("id").primaryKey(), 
-	workspaceId: text("workspaceId").references(() => workspace.id).notNull().unique(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	appId: text("app_id"), // Level 3: App-specific theme (optional)
 	theme: jsonb("theme"),
 	name: text("name"),
 	logo: text("logo"),
+	imagekitPublicKey: text("imagekitPublicKey"),
+	imagekitPrivateKey: text("imagekitPrivateKey"),
+	imagekitUrlEndpoint: text("imagekitUrlEndpoint"),
+	aiProvider: text("aiProvider"),
+	aiApiKey: text("aiApiKey"),
+	aiBaseUrl: text("aiBaseUrl"),
+	aiModelId: text("aiModelId"),
+	landingPage: jsonb("landing_page"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+// --- Functional Modules & Settings ---
+
+export const entity = pgTable("entity", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	name: text("name").notNull(),
+	type: text("type").notNull(), // 'location', 'farm', 'warehouse'
+	location: text("location"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const workflow = pgTable("workflow", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	name: text("name").notNull(),
+	description: text("description"),
+	trigger: jsonb("trigger").notNull(),
+	actions: jsonb("actions").notNull(),
+	active: integer("active").notNull().default(1),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const workflowLog = pgTable("workflowLog", {
+	id: text("id").primaryKey(),
+	workflowId: text("workflowId").references(() => workflow.id).notNull(),
+	status: text("status").notNull(), // 'success', 'failed'
+	message: text("message"),
+	data: jsonb("data"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export const webhook = pgTable("webhook", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	url: text("url").notNull(),
+	events: jsonb("events").notNull(), // ['order.created', 'stock.low']
+	secret: text("secret").notNull(),
+	active: integer("active").notNull().default(1),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const webhookDelivery = pgTable("webhookDelivery", {
+	id: text("id").primaryKey(),
+	webhookId: text("webhookId").references(() => webhook.id).notNull(),
+	event: text("event").notNull(),
+	payload: jsonb("payload").notNull(),
+	responseStatus: integer("responseStatus"),
+	responseBody: text("responseBody"),
+	duration: integer("duration"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export const posConfig = pgTable("posConfig", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull().unique(),
+	currency: text("currency").default("IDR"),
+	receiptFooter: text("receiptFooter"),
+	taxRate: integer("taxRate").default(0),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const accountingConfig = pgTable("accountingConfig", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull().unique(),
+	fiscalYearStart: text("fiscalYearStart").default("01-01"),
+	baseCurrency: text("baseCurrency").default("IDR"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const apiKey = pgTable("apiKey", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	name: text("name").notNull(),
+	key: text("key").notNull().unique(),
+	scopes: jsonb("scopes").notNull(), // ['read', 'write']
+	lastUsedAt: timestamp("lastUsedAt"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	expiresAt: timestamp("expiresAt"),
+});
+
+export const auditLog = pgTable("auditLog", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	userId: text("userId").references(() => user.id).notNull(),
+	action: text("action").notNull(),
+	entityType: text("entityType").notNull(),
+	entityId: text("entityId").notNull(),
+	metadata: jsonb("metadata"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export const landingPage = pgTable("landing_page", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	title: text("title").notNull(),
+	slug: text("slug").notNull(),
+	content: jsonb("content").notNull().default([]),
+	theme: jsonb("theme"),
+	status: text("status").notNull().default("draft"), // 'published', 'draft'
+	views: integer("views").notNull().default(0),
+	isHome: integer("isHome").notNull().default(0),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const post = pgTable("post", {
+	id: text("id").primaryKey(),
+	workspaceId: text("workspaceId").references(() => workspace.id).notNull(),
+	title: text("title").notNull(),
+	slug: text("slug").notNull(),
+	content: text("content"), // Rich text HTML content
+	excerpt: text("excerpt"),
+	featuredImage: text("featuredImage"),
+	categories: jsonb("categories").$type<string[]>(),
+	tags: jsonb("tags").$type<string[]>(),
+	status: text("status").notNull().default("draft"), // 'published', 'draft'
+	metaTitle: text("metaTitle"),
+	metaDescription: text("metaDescription"),
+	views: integer("views").notNull().default(0),
 	createdAt: timestamp("createdAt").notNull().defaultNow(),
 	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });

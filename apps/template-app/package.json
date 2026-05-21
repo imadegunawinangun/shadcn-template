@@ -1,0 +1,50 @@
+{
+  "name": "template-app",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.3.3",
+    "@tiptap/extension-image": "^3.23.4",
+    "@tiptap/extension-link": "^3.23.4",
+    "@tiptap/extension-placeholder": "^3.23.4",
+    "@tiptap/react": "^3.23.4",
+    "@tiptap/starter-kit": "^3.23.4",
+    "@workspace/ai-assistant": "workspace:*",
+    "@workspace/auth": "workspace:*",
+    "@workspace/cookie-consent": "workspace:*",
+    "@workspace/dashboard": "workspace:*",
+    "@workspace/database": "workspace:*",
+    "@workspace/landing-page": "workspace:*",
+    "@workspace/marketing": "workspace:*",
+    "@workspace/navigation": "workspace:*",
+    "@workspace/settings": "workspace:*",
+    "@workspace/ui": "workspace:*",
+    "@workspace/users": "workspace:*",
+    "@workspace/webmcp": "workspace:*",
+    "@puckeditor/core": "^0.21.1",
+    "drizzle-orm": "^0.39.1",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^1.14.0",
+    "nanoid": "^5.1.11",
+    "next": "16.1.6",
+    "next-intl": "^4.12.0",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sonner": "^2.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@workspace/landing-page",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "license": "MIT",
+  "dependencies": {
+    "@puckeditor/core": "^0.21.1",
+    "@workspace/assets": "workspace:*",
+    "@workspace/marketing": "workspace:*",
+    "@workspace/ui": "workspace:*",
+    "framer-motion": "latest",
+    "lucide-react": "latest",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sonner": "^2.0.7"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.0.0"
+  }
+}

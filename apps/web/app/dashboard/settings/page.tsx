@@ -1,7 +1,7 @@
 "use client"
 
 import { DashboardLayout, DashboardHeader, DashboardShell } from "@workspace/dashboard"
-import { ProfileSettings, AppearanceSettings, MediaSettings } from "@workspace/settings"
+import { ProfileSettings, MediaSettings } from "@workspace/settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { navSections, currentUser } from "@/lib/navigation"
 
@@ -31,17 +31,12 @@ export default function SettingsPage() {
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="media">Integrations</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile" className="space-y-4">
             <ProfileSettings />
-          </TabsContent>
-          
-          <TabsContent value="appearance" className="space-y-4">
-            <AppearanceSettings workspaceId={orgId || undefined} />
           </TabsContent>
 
           <TabsContent value="media" className="space-y-4">

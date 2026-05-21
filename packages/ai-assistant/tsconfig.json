@@ -6,7 +6,8 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
-      "@workspace/ai-assistant/*": ["./src/*"]
+      "@workspace/ai-assistant/*": ["./src/*"],
+      "@workspace/settings": ["../settings/src"]
     }
   },
   "include": ["."],

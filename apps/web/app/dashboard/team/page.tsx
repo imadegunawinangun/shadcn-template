@@ -1,5 +1,6 @@
 import { DashboardLayout, DashboardHeader, DashboardShell } from "@workspace/dashboard"
-import { getTeamMembers, getWorkspace, syncClerkOrgWithWorkspace } from "@workspace/database"
+import { getTeamMembers, getWorkspace, syncClerkOrgWithWorkspace, db, schema, eq } from "@workspace/database"
+import { getAppNavigation } from "@/lib/navigation"
 import { TeamClient } from "./team-client"
 import { auth, currentUser as getClerkUser } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
@@ -34,9 +35,15 @@ export default async function TeamPage() {
     return <div>Failed to sync workspace.</div>
   }
 
-  const [members, workspace] = await Promise.all([
+  const [members, workspace, siteConfig, globalConfig] = await Promise.all([
     getTeamMembers(orgId),
-    getWorkspace(orgId)
+    getWorkspace(orgId),
+    db.query.siteConfig.findFirst({
+      where: eq(schema.siteConfig.workspaceId, orgId)
+    }),
+    db.query.siteConfig.findFirst({
+      where: eq(schema.siteConfig.workspaceId, "platform")
+    })
   ])
 
   if (!workspace) {
@@ -44,10 +51,18 @@ export default async function TeamPage() {
   }
 
   const isAdmin = orgRole === "org:admin" || orgRole === "admin"
+  
+  const workspaceWithColor = {
+    ...workspace,
+    primaryColor: (siteConfig?.theme as any)?.customColor || null
+  }
+
+  const navigation = getAppNavigation(undefined, isAdmin)
 
   return (
     <DashboardLayout 
-      isAdmin={isAdmin} // Navigation resolved automatically inside DashboardLayout
+      sections={navigation as any}
+      isAdmin={isAdmin} 
       user={{
         name: user?.firstName ? `${user.firstName} ${user.lastName}` : "User",
         email: user?.emailAddresses[0].emailAddress || "",
@@ -63,9 +78,10 @@ export default async function TeamPage() {
         />
         <TeamClient 
           initialMembers={members} 
-          initialWorkspace={workspace} 
+          initialWorkspace={workspaceWithColor as any} 
           currentUserId={user.id}
           isAdmin={isAdmin}
+          fallbackTheme={globalConfig?.theme}
         />
       </DashboardShell>
     </DashboardLayout>
