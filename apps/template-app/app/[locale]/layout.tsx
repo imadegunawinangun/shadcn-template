@@ -6,7 +6,6 @@ import { cn } from "@workspace/ui/lib/utils";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-heading" });
 
-import { AIAssistant } from "@workspace/ai-assistant";
 import { CookieConsent } from "@workspace/cookie-consent";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@workspace/ui/components/tooltip";
@@ -22,6 +21,9 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '../../i18n/routing';
 import { ThemeProvider } from "../../components/theme-provider";
+import { auth } from "@clerk/nextjs/server";
+import { getSiteConfig } from "@workspace/database";
+import { AiAssistant } from "@workspace/ai-sdk";
 
 export default async function RootLayout({
   children,
@@ -40,6 +42,8 @@ export default async function RootLayout({
   // Providing all messages to the client side is the easiest way to get started
   const messages = await getMessages();
 
+  // Removed AI Config fetching
+
   return (
     <ClerkProvider>
       <html lang={locale} className="scroll-smooth" suppressHydrationWarning>
@@ -54,7 +58,7 @@ export default async function RootLayout({
             <ThemeProvider>
               <TooltipProvider delayDuration={0}>
                 {children}
-                <AIAssistant />
+                <AiAssistant />
                 <CookieConsent />
                 <Toaster position="top-right" richColors />
               </TooltipProvider>

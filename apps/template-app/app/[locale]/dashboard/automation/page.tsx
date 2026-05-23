@@ -2,7 +2,6 @@ import { DashboardHeader, DashboardShell } from "@workspace/dashboard"
 import { auth } from "@clerk/nextjs/server"
 import { getSiteConfig, updateSiteConfig } from "@workspace/database"
 import { redirect } from "next/navigation"
-import { SmartWriter } from "@workspace/ai-assistant"
 
 export default async function AutomationPage({ params }: { params: Promise<{ locale: string }> }) {
   const { orgId } = await auth()
@@ -34,12 +33,15 @@ export default async function AutomationPage({ params }: { params: Promise<{ loc
         heading={locale === "id" ? "Otomasi" : "Automation"}
         text={locale === "id" ? "Alat bertenaga AI dan pembuatan konten cerdas." : "AI-powered tools and smart generation."}
       />
-      <SmartWriter 
+      {/* <SmartWriter 
         workspaceId={orgId} 
         locale={locale}
         initialConfig={initialConfig} 
         onSaveConfig={handleSaveConfig} 
-      />
+      /> */}
+      <div className="mt-8 text-center p-8 bg-muted rounded-xl">
+        <p>Modul AI SmartWriter sedang dalam tahap integrasi dengan ai-sdk baru.</p>
+      </div>
     </DashboardShell>
   )
 }

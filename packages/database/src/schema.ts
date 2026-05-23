@@ -272,3 +272,13 @@ export const post = pgTable("post", {
 	createdAt: timestamp("createdAt").notNull().defaultNow(),
 	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
+
+export const userAiConfig = pgTable("userAiConfig", {
+	userId: text("userId").primaryKey().references(() => user.id),
+	provider: text("provider").default("openai"),
+	encryptedApiKey: text("encryptedApiKey").notNull(),
+	baseUrl: text("baseUrl"),
+	modelId: text("modelId"),
+	createdAt: timestamp("createdAt").notNull().defaultNow(),
+	updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});

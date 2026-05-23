@@ -25,5 +25,6 @@ export * from "./site-actions";
 export * from "./team-actions";
 export * from "./post-actions";
 export * from "./branding";
+export * as encryption from "./encryption";
 export * from "drizzle-orm";
 export { schema };

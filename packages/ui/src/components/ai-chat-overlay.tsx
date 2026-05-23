@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles } from "lucide-react";
+import { X, Send, Sparkles, Zap, Bot } from "lucide-react";
 import { Button } from "./button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "./card";
 
@@ -14,18 +14,21 @@ interface Message {
 export interface AIChatOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  onSendMessage: (message: string) => Promise<string>;
+  // Menambahkan context agar AI tahu di mana dia berada
+  context?: Record<string, any>;
+  // Mengarahkan ke model yang bisa menggunakan WebMCP tools
+  onSendMessage: (message: string, context: Record<string, any>) => Promise<string>;
 }
 
-export function AIChatOverlay({ isOpen, onClose, onSendMessage }: AIChatOverlayProps) {
+export function AIChatOverlay({ isOpen, onClose, context, onSendMessage }: AIChatOverlayProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Halo! Saya asisten AI Anda. Apa yang ingin Anda lakukan pada halaman ini?" }
+    { role: "assistant", content: "Halo! Saya Copilot Anda. Apa yang bisa saya bantu di halaman ini?" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input?.trim()) return;
 
     const userMessage = input;
     setInput("");
@@ -33,10 +36,10 @@ export function AIChatOverlay({ isOpen, onClose, onSendMessage }: AIChatOverlayP
     setLoading(true);
 
     try {
-      const response = await onSendMessage(userMessage);
+      const response = await onSendMessage(userMessage, context || {});
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
     } catch (error) {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Maaf, terjadi kesalahan saat memproses permintaan Anda." }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "Maaf, terjadi kendala teknis." }]);
     } finally {
       setLoading(false);
     }
@@ -55,8 +58,8 @@ export function AIChatOverlay({ isOpen, onClose, onSendMessage }: AIChatOverlayP
             <CardHeader className="bg-primary text-primary-foreground p-4">
               <CardTitle className="flex items-center justify-between text-lg font-black">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  AI Assistant
+                  <Bot className="h-5 w-5" />
+                  AI Copilot
                 </div>
                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-white/20" onClick={onClose}>
                   <X className="h-4 w-4" />
@@ -71,14 +74,14 @@ export function AIChatOverlay({ isOpen, onClose, onSendMessage }: AIChatOverlayP
                   </div>
                 </div>
               ))}
-              {loading && <div className="text-xs text-muted-foreground p-2">Mengetik...</div>}
+              {loading && <div className="text-xs text-muted-foreground p-2 flex items-center gap-2"><Sparkles className="h-3 w-3 animate-pulse" /> Berpikir...</div>}
             </CardContent>
             <CardFooter className="p-4 border-t bg-background">
               <form className="flex w-full gap-2" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Instruksi untuk halaman ini..."
+                  placeholder="Ketik perintah..."
                   className="flex-1 bg-muted/50 rounded-xl px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 <Button size="icon" className="rounded-xl h-10 w-10" disabled={loading}>
@@ -92,3 +95,4 @@ export function AIChatOverlay({ isOpen, onClose, onSendMessage }: AIChatOverlayP
     </AnimatePresence>
   );
 }
+

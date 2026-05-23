@@ -10,6 +10,11 @@ const isProtectedRoute = createRouteMatcher(["/(.*)/dashboard(.*)", "/dashboard(
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) await auth.protect();
   
+  // Bypass next-intl middleware for API routes to prevent 307 redirects to /[locale]/api/...
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    return;
+  }
+  
   return intlMiddleware(req);
 });
 

@@ -2,7 +2,10 @@ export interface WebMCPTool {
   name: string
   description: string
   inputSchema: any
-  execute: (input: any) => Promise<any>
+  // Menambahkan metadata untuk klasifikasi mode & safety
+  mode?: 'deterministic' | 'reasoning'
+  requiresApproval?: boolean
+  execute: (args: any) => Promise<any>
 }
 
 declare global {
@@ -18,3 +21,4 @@ declare global {
     }
   }
 }
+

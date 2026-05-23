@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.3",
-    "@workspace/admin": "workspace:*",
     "@workspace/api-keys": "workspace:*",
     "@workspace/assets": "workspace:*",
     "@workspace/auth": "workspace:*",
